@@ -6,7 +6,13 @@ package manager
 
 import (
 	"github.com/onosproject/onos-lib-go/pkg/logging"
+	"github.com/onosproject/onos-lib-go/pkg/northbound"
+	"github.com/onosproject/onos-pci/pkg/controller"
+	"github.com/onosproject/onos-pci/pkg/southbound/admin"
+	"github.com/onosproject/onos-pci/pkg/southbound/ricapie2"
 	app "github.com/onosproject/onos-ric-sdk-go/pkg/config/app/default"
+	configurable "github.com/onosproject/onos-ric-sdk-go/pkg/config/registry"
+	configutils "github.com/onosproject/onos-ric-sdk-go/pkg/config/utils"
 	"github.com/onosproject/onos-ric-sdk-go/pkg/e2/indication"
 )
 
@@ -29,23 +35,33 @@ func NewManager(config Config) *Manager {
 	log.Info("Creating Manager")
 	indCh := make(chan indication.Indication)
 	return &Manager{
+		Config: config,
+		Sessions: SBSessions{
+			AdminSession: admin.NewSession(config.E2tEndpoint),
+			E2Session:    ricapie2.NewSession(config.E2tEndpoint, config.E2SubEndpoint, config.RicActionID, 0),
+		},
 		Chans: Channels{
 			IndCh: indCh,
+		},
+		Ctrls: Controllers{
+			pciCtrl: controller.NewPciController(indCh),
 		},
 	}
 }
 
-// Manager is a manager for the KPIMON service
+// Manager is a manager for the PCI xAPP service
 type Manager struct {
 	Config   Config
 	Sessions SBSessions
 	Chans    Channels
 	Ctrls    Controllers
-	//	PeriodRange utils.PeriodRanges
 }
 
 // SBSessions is a set of Southbound sessions
-type SBSessions struct{}
+type SBSessions struct {
+	AdminSession *admin.E2AdminSession
+	E2Session    *ricapie2.E2Session
+}
 
 // Channels is a set of channels
 type Channels struct {
@@ -53,7 +69,9 @@ type Channels struct {
 }
 
 // Controllers is a set of controllers
-type Controllers struct{}
+type Controllers struct {
+	pciCtrl *controller.PciCtrl
+}
 
 // Run starts the manager and the associated services
 func (m *Manager) Run() {
@@ -65,5 +83,79 @@ func (m *Manager) Run() {
 
 // Start starts the manager
 func (m *Manager) Start() error {
+	// Start Northbound server
+	err := m.startNorthboundServer()
+	if err != nil {
+		return err
+	}
+
+	// Register the xApp as configurable entity
+	err = m.registerConfigurable()
+	if err != nil {
+		log.Error("Failed to register the app as a configurable entity", err)
+		return err
+	}
+
+	// Start Southbound client to watch indication messages
+	m.Sessions.E2Session.ReportPeriodMs, err = m.getReportPeriod()
+	m.Sessions.E2Session.AppConfig = m.Config.AppConfig
+	if err != nil {
+		log.Errorf("Failed to get report period so period is set to 0ms: %v", err)
+	}
+
+	go m.Sessions.E2Session.Run(m.Chans.IndCh, m.Sessions.AdminSession)
+	go m.Ctrls.pciCtrl.Run()
 	return nil
+}
+
+// Close kills the channels and manager related objects
+func (m *Manager) Close() {
+	log.Info("Closing Manager")
+}
+
+// registerConfigurable registers the xApp as a configurable entity
+func (m *Manager) registerConfigurable() error {
+	appConfig, err := configurable.RegisterConfigurable(&configurable.RegisterRequest{})
+	if err != nil {
+		return err
+	}
+	m.Config.AppConfig = appConfig.Config.(*app.Config)
+	return nil
+}
+
+func (m *Manager) startNorthboundServer() error {
+	s := northbound.NewServer(northbound.NewServerCfg(
+		m.Config.CAPath,
+		m.Config.KeyPath,
+		m.Config.CertPath,
+		int16(m.Config.GRPCPort),
+		true,
+		northbound.SecurityConfig{}))
+
+	// service should be registered
+	//s.AddService(nbi.NewService(m.Ctrls.PciCtrl))
+
+	doneCh := make(chan error)
+	go func() {
+		err := s.Serve(func(started string) {
+			log.Info("Started NBI on ", started)
+			close(doneCh)
+		})
+		if err != nil {
+			doneCh <- err
+		}
+	}()
+	return <-doneCh
+}
+
+func (m *Manager) getReportPeriod() (uint64, error) {
+	interval, _ := m.Config.AppConfig.Get(ricapie2.ReportPeriodConfigPath)
+	val, err := configutils.ToUint64(interval.Value)
+	if err != nil {
+		log.Error(err)
+		return 0, err
+	}
+
+	log.Infof("Received period value: %v", val)
+	return val, nil
 }

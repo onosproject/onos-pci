@@ -8,20 +8,30 @@ github.com/atomix/api/proto/atomix/headers
 github.com/atomix/api/proto/atomix/primitive
 # github.com/atomix/go-client v0.4.1
 github.com/atomix/go-client/pkg/client/errors
+# github.com/cenkalti/backoff v2.2.1+incompatible
+github.com/cenkalti/backoff
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
+# github.com/dgrijalva/jwt-go v3.2.0+incompatible
+github.com/dgrijalva/jwt-go
 # github.com/eapache/go-resiliency v1.2.0
 github.com/eapache/go-resiliency/breaker
 # github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21
 github.com/eapache/go-xerial-snappy
 # github.com/eapache/queue v1.1.0
 github.com/eapache/queue
+# github.com/envoyproxy/protoc-gen-validate v0.4.1
+github.com/envoyproxy/protoc-gen-validate/validate
+# github.com/ericchiang/oidc v0.0.0-20160908143337-11f62933e071
+github.com/ericchiang/oidc
 # github.com/fsnotify/fsnotify v1.4.9
 github.com/fsnotify/fsnotify
 # github.com/gogo/protobuf v1.3.1
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/protoc-gen-gogo/descriptor
+# github.com/golang/mock v1.4.4
+github.com/golang/mock/gomock
 # github.com/golang/protobuf v1.4.3
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/protoc-gen-go/descriptor
@@ -33,6 +43,10 @@ github.com/golang/protobuf/ptypes/timestamp
 github.com/golang/snappy
 # github.com/google/uuid v1.1.2
 github.com/google/uuid
+# github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
+github.com/grpc-ecosystem/go-grpc-middleware
+github.com/grpc-ecosystem/go-grpc-middleware/auth
+github.com/grpc-ecosystem/go-grpc-middleware/util/metautils
 # github.com/hashicorp/go-uuid v1.0.2
 github.com/hashicorp/go-uuid
 # github.com/hashicorp/hcl v1.0.0
@@ -61,22 +75,56 @@ github.com/magiconair/properties
 github.com/mitchellh/go-homedir
 # github.com/mitchellh/mapstructure v1.3.3
 github.com/mitchellh/mapstructure
+# github.com/onosproject/onos-api/go v0.7.5
+## explicit
+github.com/onosproject/onos-api/go/onos/e2sub/endpoint
+github.com/onosproject/onos-api/go/onos/e2sub/subscription
+github.com/onosproject/onos-api/go/onos/e2sub/task
+github.com/onosproject/onos-api/go/onos/e2t/admin
+github.com/onosproject/onos-api/go/onos/e2t/e2
+# github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre v0.7.7
+## explicit
+github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/pdubuilder
+github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v1/e2sm-rc-pre-ies
+# github.com/onosproject/onos-e2t v0.7.5
+## explicit
+github.com/onosproject/onos-e2t/api/e2ap/v1beta1
+github.com/onosproject/onos-e2t/api/e2ap/v1beta1/e2ap-commondatatypes
+github.com/onosproject/onos-e2t/api/e2ap/v1beta1/e2ap-constants
+github.com/onosproject/onos-e2t/api/e2ap/v1beta1/e2apies
+github.com/onosproject/onos-e2t/pkg/southbound/e2ap/types
 # github.com/onosproject/onos-lib-go v0.7.3
 ## explicit
 github.com/onosproject/onos-lib-go/api/logging
+github.com/onosproject/onos-lib-go/pkg/auth
 github.com/onosproject/onos-lib-go/pkg/certs
 github.com/onosproject/onos-lib-go/pkg/errors
+github.com/onosproject/onos-lib-go/pkg/grpcinterceptors
 github.com/onosproject/onos-lib-go/pkg/logging
 github.com/onosproject/onos-lib-go/pkg/logging/service
+github.com/onosproject/onos-lib-go/pkg/northbound
+github.com/onosproject/onos-lib-go/pkg/southbound
 # github.com/onosproject/onos-ric-sdk-go v0.7.10
 ## explicit
+github.com/onosproject/onos-ric-sdk-go/pkg/app
+github.com/onosproject/onos-ric-sdk-go/pkg/config/agent
 github.com/onosproject/onos-ric-sdk-go/pkg/config/app
 github.com/onosproject/onos-ric-sdk-go/pkg/config/app/default
+github.com/onosproject/onos-ric-sdk-go/pkg/config/callback
+github.com/onosproject/onos-ric-sdk-go/pkg/config/configurable
 github.com/onosproject/onos-ric-sdk-go/pkg/config/event
+github.com/onosproject/onos-ric-sdk-go/pkg/config/registry
 github.com/onosproject/onos-ric-sdk-go/pkg/config/store
 github.com/onosproject/onos-ric-sdk-go/pkg/config/utils
+github.com/onosproject/onos-ric-sdk-go/pkg/e2
+github.com/onosproject/onos-ric-sdk-go/pkg/e2/connection
+github.com/onosproject/onos-ric-sdk-go/pkg/e2/creds
 github.com/onosproject/onos-ric-sdk-go/pkg/e2/encoding
+github.com/onosproject/onos-ric-sdk-go/pkg/e2/endpoint
 github.com/onosproject/onos-ric-sdk-go/pkg/e2/indication
+github.com/onosproject/onos-ric-sdk-go/pkg/e2/subscription
+github.com/onosproject/onos-ric-sdk-go/pkg/e2/subscriptiontask
+github.com/onosproject/onos-ric-sdk-go/pkg/e2/termination
 # github.com/openconfig/gnmi v0.0.0-20200617225440-d2b4e6a45802
 github.com/openconfig/gnmi/proto/gnmi
 github.com/openconfig/gnmi/proto/gnmi_ext
@@ -85,6 +133,9 @@ github.com/pelletier/go-toml
 # github.com/pierrec/lz4 v2.6.0+incompatible
 github.com/pierrec/lz4
 github.com/pierrec/lz4/internal/xxh32
+# github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35
+github.com/pquerna/cachecontrol
+github.com/pquerna/cachecontrol/cacheobject
 # github.com/rcrowley/go-metrics v0.0.0-20190826022208-cac0b30c2563
 github.com/rcrowley/go-metrics
 # github.com/spf13/afero v1.4.1
@@ -114,15 +165,18 @@ go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
 # golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+golang.org/x/crypto/ed25519
+golang.org/x/crypto/ed25519/internal/edwards25519
 golang.org/x/crypto/md4
 golang.org/x/crypto/pbkdf2
-# golang.org/x/lint v0.0.0-20190930215403-16217165b5de
+# golang.org/x/lint v0.0.0-20200302205851-738671d3881b
 golang.org/x/lint
 golang.org/x/lint/golint
 # golang.org/x/mod v0.3.0
 golang.org/x/mod/semver
 # golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
 golang.org/x/net/context
+golang.org/x/net/context/ctxhttp
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
@@ -131,6 +185,9 @@ golang.org/x/net/internal/socks
 golang.org/x/net/internal/timeseries
 golang.org/x/net/proxy
 golang.org/x/net/trace
+# golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+golang.org/x/oauth2
+golang.org/x/oauth2/internal
 # golang.org/x/sys v0.0.0-20201113233024-12cec1faf1ba
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
@@ -163,9 +220,18 @@ golang.org/x/tools/internal/typesinternal
 # golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 golang.org/x/xerrors
 golang.org/x/xerrors/internal
+# google.golang.org/appengine v1.6.5
+google.golang.org/appengine/internal
+google.golang.org/appengine/internal/base
+google.golang.org/appengine/internal/datastore
+google.golang.org/appengine/internal/log
+google.golang.org/appengine/internal/remote_api
+google.golang.org/appengine/internal/urlfetch
+google.golang.org/appengine/urlfetch
 # google.golang.org/genproto v0.0.0-20201113130914-ce600e9a6f9e
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.33.2
+## explicit
 google.golang.org/grpc
 google.golang.org/grpc/attributes
 google.golang.org/grpc/backoff
@@ -201,12 +267,15 @@ google.golang.org/grpc/internal/transport
 google.golang.org/grpc/keepalive
 google.golang.org/grpc/metadata
 google.golang.org/grpc/peer
+google.golang.org/grpc/reflection
+google.golang.org/grpc/reflection/grpc_reflection_v1alpha
 google.golang.org/grpc/resolver
 google.golang.org/grpc/serviceconfig
 google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
 # google.golang.org/protobuf v1.25.0
+## explicit
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
 google.golang.org/protobuf/internal/descfmt
@@ -277,6 +346,14 @@ gopkg.in/jcmturner/gokrb5.v7/types
 # gopkg.in/jcmturner/rpc.v1 v1.1.0
 gopkg.in/jcmturner/rpc.v1/mstypes
 gopkg.in/jcmturner/rpc.v1/ndr
+# gopkg.in/square/go-jose.v1 v1.1.2
+gopkg.in/square/go-jose.v1
+gopkg.in/square/go-jose.v1/cipher
+gopkg.in/square/go-jose.v1/json
+# gopkg.in/square/go-jose.v2 v2.5.1
+gopkg.in/square/go-jose.v2
+gopkg.in/square/go-jose.v2/cipher
+gopkg.in/square/go-jose.v2/json
 # gopkg.in/yaml.v2 v2.3.0
 gopkg.in/yaml.v2
 # honnef.co/go/tools v0.0.1-2019.2.3
