@@ -18,7 +18,6 @@ import (
 
 var log = logging.GetLogger("manager")
 
-
 // Config is a manager configuration
 type Config struct {
 	CAPath        string
@@ -39,7 +38,7 @@ func NewManager(config Config) *Manager {
 		Config: config,
 		Sessions: SBSessions{
 			AdminSession: admin.NewSession(config.E2tEndpoint),
-			E2Session: ricapie2.NewSession(config.E2tEndpoint, config.E2SubEndpoint, config.RicActionID, 0),
+			E2Session:    ricapie2.NewSession(config.E2tEndpoint, config.E2SubEndpoint, config.RicActionID, 0),
 		},
 		Chans: Channels{
 			IndCh: indCh,
@@ -59,9 +58,9 @@ type Manager struct {
 }
 
 // SBSessions is a set of Southbound sessions
-type SBSessions struct{
+type SBSessions struct {
 	AdminSession *admin.E2AdminSession
-	E2Session *ricapie2.E2Session
+	E2Session    *ricapie2.E2Session
 }
 
 // Channels is a set of channels
@@ -70,7 +69,7 @@ type Channels struct {
 }
 
 // Controllers is a set of controllers
-type Controllers struct{
+type Controllers struct {
 	pciCtrl *controller.PciCtrl
 }
 

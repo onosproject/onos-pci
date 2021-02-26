@@ -14,8 +14,8 @@ var log = logging.GetLogger("ctrl-pci")
 
 // KpiMonCtrl is the controller for the KPI monitoring
 type PciCtrl struct {
-	IndChan       chan indication.Indication
-	PciMutex   sync.RWMutex
+	IndChan  chan indication.Indication
+	PciMutex sync.RWMutex
 }
 
 // CellIdentity is the ID for each cell

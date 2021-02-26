@@ -7,30 +7,29 @@ package ricapie2
 import (
 	"context"
 	"github.com/onosproject/onos-api/go/onos/e2sub/subscription"
+	"github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/pdubuilder"
+	"github.com/onosproject/onos-e2t/pkg/southbound/e2ap/types"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-pci/pkg/southbound/admin"
 	app "github.com/onosproject/onos-ric-sdk-go/pkg/config/app/default"
 	"github.com/onosproject/onos-ric-sdk-go/pkg/config/event"
 	configutils "github.com/onosproject/onos-ric-sdk-go/pkg/config/utils"
+	e2client "github.com/onosproject/onos-ric-sdk-go/pkg/e2"
 	"github.com/onosproject/onos-ric-sdk-go/pkg/e2/indication"
 	sdkSub "github.com/onosproject/onos-ric-sdk-go/pkg/e2/subscription"
-	"github.com/onosproject/onos-e2t/pkg/southbound/e2ap/types"
-	e2client "github.com/onosproject/onos-ric-sdk-go/pkg/e2"
-	"github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/pdubuilder"
+	"google.golang.org/protobuf/proto"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"google.golang.org/protobuf/proto"
 )
 
 var log = logging.GetLogger("sb-ricapie2")
 
 const (
-	serviceModelID = "e2sm_rc_pre-v1"
+	serviceModelID         = "e2sm_rc_pre-v1"
 	ReportPeriodConfigPath = "/report_period/interval"
 )
-
 
 // E2Session is responsible for mapping connections to and interactions with the northbound of ONOS-E2T
 type E2Session struct {
