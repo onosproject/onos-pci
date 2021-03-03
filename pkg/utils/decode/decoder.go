@@ -8,4 +8,3 @@ package decode
 func PlmnIdToUint32(plmnBytes []byte) uint32 {
 	return uint32(plmnBytes[0]) | uint32(plmnBytes[1])<<8 | uint32(plmnBytes[2])<<16
 }
-
