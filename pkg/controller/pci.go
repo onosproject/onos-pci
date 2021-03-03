@@ -5,58 +5,29 @@
 package controller
 
 import (
-	"google.golang.org/protobuf/proto"
 	e2smrcpreies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v1/e2sm-rc-pre-ies"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
+	"github.com/onosproject/onos-pci/pkg/store"
 	"github.com/onosproject/onos-pci/pkg/utils/decode"
 	"github.com/onosproject/onos-ric-sdk-go/pkg/e2/indication"
+	"google.golang.org/protobuf/proto"
 	"sync"
 )
 
-var log = logging.GetLogger("ctrl-pci")
+var log = logging.GetLogger("controller", "pci")
 
-// KpiMonCtrl is the controller for the KPI monitoring
+// PciCtrl is the controller for the KPI monitoring
 type PciCtrl struct {
 	IndChan           chan indication.Indication
-	PciMetricMap      map[CGI]CellPciNrt
+	PciMetricMap      map[*store.CGI]*store.CellPciNrt
 	PciMetricMapMutex sync.RWMutex
-}
-
-// CellCGI is the ID for each cell
-type CGI struct {
-	PlmnID  uint32
-	Ecid    uint64
-	EcidLen uint32
-}
-
-type CellMetric struct {
-	DlEarfcn int32
-	CellSize e2smrcpreies.CellSize
-	Pci      int32
-}
-
-type CellPciNrt struct {
-	Metric      CellMetric
-	PciPoolList []PciPool
-	Neighbors   []NeighborCell
-}
-
-type PciPool struct {
-	LowerPci int32
-	UpperPci int32
-}
-
-type NeighborCell struct {
-	NrIndex int32
-	Cgi     CGI
-	Metric  CellMetric
 }
 
 func NewPciController(indChan chan indication.Indication) *PciCtrl {
 	log.Info("Start ONOS-PCI Application Controller")
 	return &PciCtrl{
 		IndChan:      indChan,
-		PciMetricMap: make(map[CGI]CellPciNrt),
+		PciMetricMap: make(map[*store.CGI]*store.CellPciNrt),
 	}
 }
 
@@ -70,11 +41,9 @@ func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderF
 	log.Debugf("ECID: %d", header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue())
 	log.Debugf("ECID Length: %d", header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen())
 
-	cgi := CGI{
-		PlmnID:  decode.PlmnIdToUint32(header.GetCgi().GetEUtraCgi().GetPLmnIdentity().GetValue()),
-		Ecid:    header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue(),
-		EcidLen: header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen(),
-	}
+	cgi := store.NewCGI(decode.PlmnIdToUint32(header.GetCgi().GetEUtraCgi().GetPLmnIdentity().GetValue()),
+		header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue(),
+		header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen())
 
 	log.Debugf("Message: %v", message)
 	log.Debugf("EARFCN DL: %d", message.GetDlEarfcn().GetValue())
@@ -83,50 +52,31 @@ func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderF
 	log.Debugf("PCI: %d", message.GetPci().GetValue())
 	log.Debugf("Neighbors: %v", message.GetNeighbors())
 
-	metric := CellMetric{
-		DlEarfcn: message.GetDlEarfcn().GetValue(),
-		CellSize: message.GetCellSize(),
-		Pci:      message.GetPci().GetValue(),
-	}
+	metric := store.NewCellMetric(message.GetDlEarfcn().GetValue(), message.GetCellSize(), message.GetPci().GetValue())
 
-	var pciPoolList []PciPool
+	var pciPoolList []*store.PciPool
 	for i := 0; i < len(message.GetPciPool()); i++ {
-		pciPool := PciPool{
-			LowerPci: message.GetPciPool()[i].GetLowerPci().GetValue(),
-			UpperPci: message.GetPciPool()[i].GetUpperPci().GetValue(),
-		}
+		pciPool := store.NewPciPool(message.GetPciPool()[i].GetLowerPci().GetValue(), message.GetPciPool()[i].GetUpperPci().GetValue())
 		pciPoolList = append(pciPoolList, pciPool)
 	}
 
-	var neighbors []NeighborCell
+	var neighbors []*store.NeighborCell
 	for i := 0; i < len(message.GetNeighbors()); i++ {
-		neighborCgi := CGI{
-			PlmnID:  decode.PlmnIdToUint32(message.GetNeighbors()[i].GetCgi().GetEUtraCgi().GetPLmnIdentity().GetValue()),
-			Ecid:    message.GetNeighbors()[i].GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue(),
-			EcidLen: message.GetNeighbors()[i].GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen(),
-		}
-		neighborMetric := CellMetric{
-			DlEarfcn: message.GetNeighbors()[i].GetDlEarfcn().GetValue(),
-			CellSize: message.GetNeighbors()[i].GetCellSize(),
-			Pci:      message.GetPci().GetValue(),
-		}
-		neighbor := NeighborCell{
-			NrIndex: message.GetNeighbors()[i].GetNrIndex(),
-			Cgi:     neighborCgi,
-			Metric:  neighborMetric,
-		}
+		neighborCgi := store.NewCGI(decode.PlmnIdToUint32(message.GetNeighbors()[i].GetCgi().GetEUtraCgi().GetPLmnIdentity().GetValue()),
+			message.GetNeighbors()[i].GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue(),
+			message.GetNeighbors()[i].GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen())
+
+		neighborMetric := store.NewCellMetric(message.GetNeighbors()[i].GetDlEarfcn().GetValue(), message.GetNeighbors()[i].GetCellSize(), message.GetPci().GetValue())
+
+		neighbor := store.NewNeighborCell(message.GetNeighbors()[i].GetNrIndex(), neighborCgi, neighborMetric)
+
 		neighbors = append(neighbors, neighbor)
 	}
 
-	cellPciNrt := CellPciNrt{
-		Metric:      metric,
-		PciPoolList: pciPoolList,
-		Neighbors:   neighbors,
-	}
+	cellPciNrt := store.NewCellPciNrt(metric, pciPoolList, neighbors)
 
 	c.PciMetricMapMutex.Lock()
 	c.PciMetricMap[cgi] = cellPciNrt
-	log.Infof("PciNrt: %v", c.PciMetricMap)
 	c.PciMetricMapMutex.Unlock()
 }
 
