@@ -219,6 +219,7 @@ func (s *E2Session) subscribeE2T(indChan chan indication.Indication, nodeIDs []s
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	log.Info(nodeIDs)
 	subReq, err := s.createSubscriptionRequest(nodeIDs[0])
 	if err != nil {
 		log.Error("Can't create SubsdcriptionRequest message")
