@@ -14,7 +14,7 @@ import (
 	"sync"
 )
 
-var log = logging.GetLogger("controller", "pci")
+var logPci = logging.GetLogger("controller", "pci")
 
 // PciCtrl is the controller for the KPI monitoring
 type PciCtrl struct {
@@ -23,34 +23,36 @@ type PciCtrl struct {
 	PciMetricMapMutex sync.RWMutex
 }
 
+// NewPciController returns the struct for PCI logic
 func NewPciController(indChan chan indication.Indication) *PciCtrl {
-	log.Info("Start ONOS-PCI Application Controller")
+	logPci.Info("Start ONOS-PCI Application Controller")
 	return &PciCtrl{
 		IndChan:      indChan,
 		PciMetricMap: make(map[*store.CGI]*store.CellPciNrt),
 	}
 }
 
+// Run starts to listen Indication message and then save the result to its struct
 func (c *PciCtrl) Run() {
 	c.listenIndChan()
 }
 
 func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderFormat1, message *e2smrcpreies.E2SmRcPreIndicationMessageFormat1) {
-	log.Debugf("Header: %v", header)
-	log.Debugf("PLMN ID: %d", decode.PlmnIdToUint32(header.GetCgi().GetEUtraCgi().GetPLmnIdentity().GetValue()))
-	log.Debugf("ECID: %d", header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue())
-	log.Debugf("ECID Length: %d", header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen())
+	logPci.Debugf("Header: %v", header)
+	logPci.Debugf("PLMN ID: %d", decode.PlmnIdToUint32(header.GetCgi().GetEUtraCgi().GetPLmnIdentity().GetValue()))
+	logPci.Debugf("ECID: %d", header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue())
+	logPci.Debugf("ECID Length: %d", header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen())
 
 	cgi := store.NewCGI(decode.PlmnIdToUint32(header.GetCgi().GetEUtraCgi().GetPLmnIdentity().GetValue()),
 		header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue(),
 		header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen())
 
-	log.Debugf("Message: %v", message)
-	log.Debugf("EARFCN DL: %d", message.GetDlEarfcn().GetValue())
-	log.Debugf("Cell size: %v", message.GetCellSize().String())
-	log.Debugf("PCI Pool: %v", message.GetPciPool())
-	log.Debugf("PCI: %d", message.GetPci().GetValue())
-	log.Debugf("Neighbors: %v", message.GetNeighbors())
+	logPci.Debugf("Message: %v", message)
+	logPci.Debugf("EARFCN DL: %d", message.GetDlEarfcn().GetValue())
+	logPci.Debugf("Cell size: %v", message.GetCellSize().String())
+	logPci.Debugf("PCI Pool: %v", message.GetPciPool())
+	logPci.Debugf("PCI: %d", message.GetPci().GetValue())
+	logPci.Debugf("Neighbors: %v", message.GetNeighbors())
 
 	metric := store.NewCellMetric(message.GetDlEarfcn().GetValue(), message.GetCellSize(), message.GetPci().GetValue())
 
@@ -77,13 +79,18 @@ func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderF
 
 	c.PciMetricMapMutex.Lock()
 	c.PciMetricMap[cgi] = cellPciNrt
+	pciArbitrator := NewPciArbitratorController(cgi, cellPciNrt)
+	err := pciArbitrator.Start(c.PciMetricMap)
+	if err != nil {
+		logPci.Errorf("PCI Arbitrator has an error - %v", err)
+	}
 	c.PciMetricMapMutex.Unlock()
 }
 
 func (c *PciCtrl) listenIndChan() {
 	var err error
 	for indMsg := range c.IndChan {
-		log.Debugf("Raw message: %v", indMsg)
+		logPci.Debugf("Raw message: %v", indMsg)
 
 		indHeaderByte := indMsg.Payload.Header
 		indMessageByte := indMsg.Payload.Message
@@ -91,15 +98,15 @@ func (c *PciCtrl) listenIndChan() {
 		indHeader := e2smrcpreies.E2SmRcPreIndicationHeader{}
 		err = proto.Unmarshal(indHeaderByte, &indHeader)
 		if err != nil {
-			log.Errorf("Error - Unmarshalling header protobytes to struct: %v", err)
+			logPci.Errorf("Error - Unmarshalling header protobytes to struct: %v", err)
 		}
 
 		indMessage := e2smrcpreies.E2SmRcPreIndicationMessage{}
 		err = proto.Unmarshal(indMessageByte, &indMessage)
 		if err != nil {
-			log.Errorf("Error - Unmarshalling message protobytes to struct: %v", err)
+			logPci.Errorf("Error - Unmarshalling message protobytes to struct: %v", err)
 		}
 
-		go c.storePciMetric(indHeader.GetIndicationHeaderFormat1(), indMessage.GetIndicationMessageFormat1())
+		c.storePciMetric(indHeader.GetIndicationHeaderFormat1(), indMessage.GetIndicationMessageFormat1())
 	}
 }
