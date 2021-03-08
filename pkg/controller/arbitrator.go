@@ -61,7 +61,7 @@ func (a *PciArbitratorCtrl) Run(pciMetricMap map[*store.CGI]*store.CellPciNrt) e
 func (a *PciArbitratorCtrl) getUniquePci() (int32, error) {
 	for _, pool := range a.TargetE2NodeMetric.PciPoolList {
 		for i := pool.LowerPci; i <= pool.UpperPci; i++ {
-			if a.NeighborPcis[i] == false {
+			if !a.NeighborPcis[i] {
 				return i, nil
 			}
 		}

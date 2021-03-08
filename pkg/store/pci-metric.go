@@ -6,10 +6,7 @@ package store
 
 import (
 	e2smrcpreies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v1/e2sm-rc-pre-ies"
-	"github.com/onosproject/onos-lib-go/pkg/logging"
 )
-
-var log = logging.GetLogger("store", "pci-metric")
 
 // CGI is the ID for each cell
 type CGI struct {
