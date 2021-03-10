@@ -137,7 +137,7 @@ func (s *E2Session) manageConnections(indChan chan indication.Indication, adminS
 func (s *E2Session) manageConnection(indChan chan indication.Indication, nodeIDs []string) {
 	err := s.subscribeE2T(indChan, nodeIDs)
 	if err != nil {
-		log.Errorf("Error happens when subscription %s", err)
+		log.Warn("Error happens when subscription %s", err)
 	}
 }
 
@@ -211,7 +211,7 @@ func (s *E2Session) subscribeE2T(indChan chan indication.Indication, nodeIDs []s
 	client, err := e2client.NewClient(clientConfig)
 
 	if err != nil {
-		log.Error("Can't open E2Client.")
+		log.Warn("Can't open E2Client.")
 		return err
 	}
 
@@ -222,13 +222,13 @@ func (s *E2Session) subscribeE2T(indChan chan indication.Indication, nodeIDs []s
 	log.Info(nodeIDs)
 	subReq, err := s.createSubscriptionRequest(nodeIDs[0])
 	if err != nil {
-		log.Error("Can't create SubsdcriptionRequest message")
+		log.Warn("Can't create SubsdcriptionRequest message")
 		return err
 	}
 
 	s.E2SubInstance, err = client.Subscribe(ctx, subReq, ch)
 	if err != nil {
-		log.Error("Can't send SubscriptionRequest message")
+		log.Warn("Can't send SubscriptionRequest message")
 		return err
 	}
 
