@@ -19,8 +19,9 @@ var logPci = logging.GetLogger("controller", "pci")
 // PciCtrl is the controller for the KPI monitoring
 type PciCtrl struct {
 	IndChan           chan indication.Indication
-	PciMetricMap      map[*store.CGI]*store.CellPciNrt
+	PciMetricMap      map[string]*store.CellPciNrt
 	PciMetricMapMutex sync.RWMutex
+	GlobalPciMap      map[string]int32
 }
 
 // NewPciController returns the struct for PCI logic
@@ -28,7 +29,8 @@ func NewPciController(indChan chan indication.Indication) *PciCtrl {
 	logPci.Info("Start ONOS-PCI Application Controller")
 	return &PciCtrl{
 		IndChan:      indChan,
-		PciMetricMap: make(map[*store.CGI]*store.CellPciNrt),
+		PciMetricMap: make(map[string]*store.CellPciNrt),
+		GlobalPciMap: make(map[string]int32),
 	}
 }
 
@@ -68,22 +70,24 @@ func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderF
 			message.GetNeighbors()[i].GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue(),
 			message.GetNeighbors()[i].GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen())
 
-		neighborMetric := store.NewCellMetric(message.GetNeighbors()[i].GetDlEarfcn().GetValue(), message.GetNeighbors()[i].GetCellSize(), message.GetPci().GetValue())
+		neighborMetric := store.NewCellMetric(message.GetNeighbors()[i].GetDlEarfcn().GetValue(), message.GetNeighbors()[i].GetCellSize(), message.GetNeighbors()[i].GetPci().GetValue())
 
 		neighbor := store.NewNeighborCell(message.GetNeighbors()[i].GetNrIndex(), neighborCgi, neighborMetric)
 
 		neighbors = append(neighbors, neighbor)
+		c.GlobalPciMap[decode.CgiToString(neighborCgi)] = message.GetNeighbors()[i].GetPci().GetValue()
 	}
 
 	cellPciNrt := store.NewCellPciNrt(metric, pciPoolList, neighbors)
 
 	c.PciMetricMapMutex.Lock()
-	c.PciMetricMap[cgi] = cellPciNrt
+	c.PciMetricMap[decode.CgiToString(cgi)] = cellPciNrt
 	pciArbitrator := NewPciArbitratorController(cgi, cellPciNrt)
-	err := pciArbitrator.Start(c.PciMetricMap)
+	err := pciArbitrator.Start(c.PciMetricMap, c.GlobalPciMap)
 	if err != nil {
 		logPci.Errorf("PCI Arbitrator has an error - %v", err)
 	}
+	c.GlobalPciMap[decode.CgiToString(cgi)] = c.PciMetricMap[decode.CgiToString(cgi)].Metric.Pci
 	c.PciMetricMapMutex.Unlock()
 }
 

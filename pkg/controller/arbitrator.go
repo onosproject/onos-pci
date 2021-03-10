@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-pci/pkg/store"
+	"github.com/onosproject/onos-pci/pkg/utils/decode"
 )
 
 var logArb = logging.GetLogger("controller", "arbitrator")
@@ -16,8 +17,8 @@ var logArb = logging.GetLogger("controller", "arbitrator")
 type PciArbitratorCtrl struct {
 	TargetE2NodeCgi    *store.CGI
 	TargetE2NodeMetric *store.CellPciNrt
-	D1NeighborPciMap   map[*store.CGI]int32 // Key: neighbor's CGI / neighbor's PCI
-	D2NeighborPciMap   map[*store.CGI]int32 // Key: neighbor's neighbor's CGI / neighbor's neighbor's PCI
+	D1NeighborPciMap   map[string]int32 // Key: neighbor's CGI / neighbor's PCI
+	D2NeighborPciMap   map[string]int32 // Key: neighbor's neighbor's CGI / neighbor's neighbor's PCI
 	NeighborPcis       map[int32]bool
 }
 
@@ -26,22 +27,26 @@ func NewPciArbitratorController(targetE2NodeCgi *store.CGI, targetE2NodeMetric *
 	return &PciArbitratorCtrl{
 		TargetE2NodeCgi:    targetE2NodeCgi,
 		TargetE2NodeMetric: targetE2NodeMetric,
-		D1NeighborPciMap:   make(map[*store.CGI]int32),
-		D2NeighborPciMap:   make(map[*store.CGI]int32),
+		D1NeighborPciMap:   make(map[string]int32),
+		D2NeighborPciMap:   make(map[string]int32),
 		NeighborPcis:       make(map[int32]bool),
 	}
 }
 
 // Start is the function to run PCIArbitrator
-func (a *PciArbitratorCtrl) Start(pciMetricMap map[*store.CGI]*store.CellPciNrt) error {
-	return a.Run(pciMetricMap)
+func (a *PciArbitratorCtrl) Start(pciMetricMap map[string]*store.CellPciNrt, globalPciMap map[string]int32) error {
+	return a.Run(pciMetricMap, globalPciMap)
 }
 
 // Run is the main function to arbitrate PCI
-func (a *PciArbitratorCtrl) Run(pciMetricMap map[*store.CGI]*store.CellPciNrt) error {
+func (a *PciArbitratorCtrl) Run(pciMetricMap map[string]*store.CellPciNrt, globalPciMap map[string]int32) error {
 	var err error
-	a.setD1NeighborPciMap(pciMetricMap)
-	a.setD2NeighborPciMap(pciMetricMap)
+	a.setD1NeighborPciMap(pciMetricMap, globalPciMap)
+	a.setD2NeighborPciMap(pciMetricMap, globalPciMap)
+
+	logArb.Infof("Global PCI Map: %v", globalPciMap)
+	logArb.Infof("D1 Neighbor PCIs: %v", a.D1NeighborPciMap)
+	logArb.Infof("D2 Neighbor PCIs: %v", a.D2NeighborPciMap)
 
 	if a.verifyPci() {
 		return nil
@@ -51,12 +56,11 @@ func (a *PciArbitratorCtrl) Run(pciMetricMap map[*store.CGI]*store.CellPciNrt) e
 	if err != nil {
 		return err
 	}
-	logArb.Infof("PCI of E2Node %v is assigned to %d", a.TargetE2NodeCgi, a.TargetE2NodeMetric.Metric.Pci)
+	logArb.Infof("PCI of E2Node %v is assigned to %d", decode.CgiToString(a.TargetE2NodeCgi), a.TargetE2NodeMetric.Metric.Pci)
 
 	// push code to send control message
 	return nil
 }
-
 
 func (a *PciArbitratorCtrl) getUniquePci() (int32, error) {
 	for _, pool := range a.TargetE2NodeMetric.PciPoolList {
@@ -87,27 +91,34 @@ func (a *PciArbitratorCtrl) verifyPci() bool {
 	return true
 }
 
-func (a *PciArbitratorCtrl) setD1NeighborPciMap(pciMetricMap map[*store.CGI]*store.CellPciNrt) {
-	for _, n := range pciMetricMap[a.TargetE2NodeCgi].Neighbors {
-		if n.Cgi != a.TargetE2NodeCgi {
-			a.D1NeighborPciMap[n.Cgi] = n.Metric.Pci
+func (a *PciArbitratorCtrl) setD1NeighborPciMap(pciMetricMap map[string]*store.CellPciNrt, globalPciMap map[string]int32) {
+	for _, n := range pciMetricMap[decode.CgiToString(a.TargetE2NodeCgi)].Neighbors {
+		if decode.CgiToString(n.Cgi) != decode.CgiToString(a.TargetE2NodeCgi) {
+			a.D1NeighborPciMap[decode.CgiToString(n.Cgi)] = globalPciMap[decode.CgiToString(n.Cgi)]
 			a.NeighborPcis[n.Metric.Pci] = true
 		}
 	}
 }
 
-func (a *PciArbitratorCtrl) setD2NeighborPciMap(pciMetricMap map[*store.CGI]*store.CellPciNrt) {
+func (a *PciArbitratorCtrl) setD2NeighborPciMap(pciMetricMap map[string]*store.CellPciNrt, globalPciMap map[string]int32) {
 	for n1 := range a.D1NeighborPciMap {
+		if _, ok := pciMetricMap[n1]; !ok {
+			continue
+		} else if pciMetricMap[n1].Neighbors == nil {
+			continue
+		}
 		for _, n2 := range pciMetricMap[n1].Neighbors {
-			if n2.Cgi != a.TargetE2NodeCgi && (!a.hasNode(n2.Cgi, a.D1NeighborPciMap)) {
-				a.D2NeighborPciMap[n2.Cgi] = n2.Metric.Pci
+			if decode.CgiToString(n2.Cgi) != decode.CgiToString(a.TargetE2NodeCgi) && (!a.hasPci(n2.Cgi, globalPciMap)) {
+				a.D2NeighborPciMap[decode.CgiToString(n2.Cgi)] = globalPciMap[decode.CgiToString(n2.Cgi)]
 				a.NeighborPcis[n2.Metric.Pci] = true
 			}
 		}
 	}
 }
 
-func (a *PciArbitratorCtrl) hasNode(source *store.CGI, m map[*store.CGI]int32) bool {
-	_, ok := m[source]
-	return ok
+func (a *PciArbitratorCtrl) hasPci(source *store.CGI, m map[string]int32) bool {
+	if _, ok := m[decode.CgiToString(source)]; ok {
+		return true
+	}
+	return false
 }
