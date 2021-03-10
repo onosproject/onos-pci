@@ -129,13 +129,23 @@ func (s *E2Session) manageConnections(indChan chan indication.Indication, adminS
 			time.Sleep(1000 * time.Millisecond)
 			continue
 		}
-		s.manageConnection(indChan, nodeIDs)
-
+		log.Infof("Received E2Nodes: %v", nodeIDs)
+		var wg sync.WaitGroup
+		for _, id := range nodeIDs {
+			wg.Add(1)
+			go func(id string, wg *sync.WaitGroup) {
+				defer wg.Done()
+				for {
+					s.manageConnection(indChan, id)
+				}
+			}(id, &wg)
+		}
+		wg.Wait()
 	}
 }
 
-func (s *E2Session) manageConnection(indChan chan indication.Indication, nodeIDs []string) {
-	err := s.subscribeE2T(indChan, nodeIDs)
+func (s *E2Session) manageConnection(indChan chan indication.Indication, nodeID string) {
+	err := s.subscribeE2T(indChan, nodeID)
 	if err != nil {
 		log.Warn("Error happens when subscription %s", err)
 	}
@@ -190,7 +200,7 @@ func (s *E2Session) createEventTriggerData() []byte {
 	return protoBytes
 }
 
-func (s *E2Session) subscribeE2T(indChan chan indication.Indication, nodeIDs []string) error {
+func (s *E2Session) subscribeE2T(indChan chan indication.Indication, nodeID string) error {
 	log.Infof("Connecting to ONOS-E2Sub...%s", s.E2SubEndpoint)
 
 	e2SubHost := strings.Split(s.E2SubEndpoint, ":")[0]
@@ -219,8 +229,7 @@ func (s *E2Session) subscribeE2T(indChan chan indication.Indication, nodeIDs []s
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	log.Info(nodeIDs)
-	subReq, err := s.createSubscriptionRequest(nodeIDs[0])
+	subReq, err := s.createSubscriptionRequest(nodeID)
 	if err != nil {
 		log.Warn("Can't create SubsdcriptionRequest message")
 		return err

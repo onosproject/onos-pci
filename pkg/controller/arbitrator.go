@@ -49,6 +49,7 @@ func (a *PciArbitratorCtrl) Run(pciMetricMap map[string]*store.CellPciNrt, globa
 	logArb.Infof("D2 Neighbor PCIs: %v", a.D2NeighborPciMap)
 
 	if a.verifyPci() {
+		logArb.Infof("PCI of E2Node %v is assigned to %d", decode.CgiToString(a.TargetE2NodeCgi), a.TargetE2NodeMetric.Metric.Pci)
 		return nil
 	}
 
