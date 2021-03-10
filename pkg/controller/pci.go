@@ -21,7 +21,7 @@ type PciCtrl struct {
 	IndChan           chan indication.Indication
 	PciMetricMap      map[string]*store.CellPciNrt
 	PciMetricMapMutex sync.RWMutex
-	GlobalPciMap	  map[string]int32
+	GlobalPciMap      map[string]int32
 }
 
 // NewPciController returns the struct for PCI logic
