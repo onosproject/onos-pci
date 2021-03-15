@@ -5,15 +5,16 @@
 package manager
 
 import (
+	e2tapi "github.com/onosproject/onos-api/go/onos/e2t/e2"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-lib-go/pkg/northbound"
 	"github.com/onosproject/onos-pci/pkg/controller"
 	"github.com/onosproject/onos-pci/pkg/southbound/admin"
 	"github.com/onosproject/onos-pci/pkg/southbound/ricapie2"
+	"github.com/onosproject/onos-pci/pkg/store"
 	app "github.com/onosproject/onos-ric-sdk-go/pkg/config/app/default"
 	configurable "github.com/onosproject/onos-ric-sdk-go/pkg/config/registry"
 	configutils "github.com/onosproject/onos-ric-sdk-go/pkg/config/utils"
-	"github.com/onosproject/onos-ric-sdk-go/pkg/e2/indication"
 )
 
 var log = logging.GetLogger("manager")
@@ -33,7 +34,9 @@ type Config struct {
 // NewManager creates a new manager
 func NewManager(config Config) *Manager {
 	log.Info("Creating Manager")
-	indCh := make(chan indication.Indication)
+	indCh := make(chan *store.E2NodeIndication)
+	ctrlReqChs := make(map[string]chan *e2tapi.ControlRequest)
+	//ctrlReqCh := make(chan *e2tapi.ControlRequest)
 	return &Manager{
 		Config: config,
 		Sessions: SBSessions{
@@ -41,10 +44,11 @@ func NewManager(config Config) *Manager {
 			E2Session:    ricapie2.NewSession(config.E2tEndpoint, config.E2SubEndpoint, config.RicActionID, 0),
 		},
 		Chans: Channels{
-			IndCh: indCh,
+			IndCh:      indCh,
+			CtrlReqChs: ctrlReqChs,
 		},
 		Ctrls: Controllers{
-			pciCtrl: controller.NewPciController(indCh),
+			pciCtrl: controller.NewPciController(indCh, ctrlReqChs),
 		},
 	}
 }
@@ -65,7 +69,8 @@ type SBSessions struct {
 
 // Channels is a set of channels
 type Channels struct {
-	IndCh chan indication.Indication
+	IndCh      chan *store.E2NodeIndication
+	CtrlReqChs map[string]chan *e2tapi.ControlRequest
 }
 
 // Controllers is a set of controllers
@@ -103,7 +108,7 @@ func (m *Manager) Start() error {
 		log.Errorf("Failed to get report period so period is set to 0ms: %v", err)
 	}
 
-	go m.Sessions.E2Session.Run(m.Chans.IndCh, m.Sessions.AdminSession)
+	go m.Sessions.E2Session.Run(m.Chans.IndCh, m.Chans.CtrlReqChs, m.Sessions.AdminSession)
 	go m.Ctrls.pciCtrl.Run()
 	return nil
 }

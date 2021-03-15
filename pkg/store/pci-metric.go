@@ -6,6 +6,7 @@ package store
 
 import (
 	e2smrcpreies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v1/e2sm-rc-pre-ies"
+	"github.com/onosproject/onos-ric-sdk-go/pkg/e2/indication"
 )
 
 // CGI is the ID for each cell
@@ -42,11 +43,16 @@ type NeighborCell struct {
 	Metric  *CellMetric
 }
 
+type E2NodeIndication struct {
+	NodeID string
+	IndMsg indication.Indication
+}
+
 // NewCGI makes a new CGI object and returns its address
 func NewCGI(plmnID uint32, ecid uint64, ecidLen uint32) *CGI {
 	return &CGI{
-		PlmnID: plmnID,
-		Ecid: ecid,
+		PlmnID:  plmnID,
+		Ecid:    ecid,
 		EcidLen: ecidLen,
 	}
 }
@@ -56,22 +62,22 @@ func NewCellMetric(dlEarfcn int32, cellSize e2smrcpreies.CellSize, pci int32) *C
 	return &CellMetric{
 		DlEarfcn: dlEarfcn,
 		CellSize: cellSize,
-		Pci: pci,
+		Pci:      pci,
 	}
 }
 
 // NewCellPciNrt makes a new CellPciNrt object and returns its address
 func NewCellPciNrt(metric *CellMetric, pciPoolList []*PciPool, neighbors []*NeighborCell) *CellPciNrt {
 	return &CellPciNrt{
-		Metric: metric,
+		Metric:      metric,
 		PciPoolList: pciPoolList,
-		Neighbors: neighbors,
+		Neighbors:   neighbors,
 	}
 }
 
 // NewPciPool makes a new PciPool object and returns its address
 func NewPciPool(lowerPci int32, upperPci int32) *PciPool {
-	return &PciPool {
+	return &PciPool{
 		LowerPci: lowerPci,
 		UpperPci: upperPci,
 	}
@@ -81,8 +87,7 @@ func NewPciPool(lowerPci int32, upperPci int32) *PciPool {
 func NewNeighborCell(nrIndex int32, cgi *CGI, metric *CellMetric) *NeighborCell {
 	return &NeighborCell{
 		NrIndex: nrIndex,
-		Cgi: cgi,
-		Metric: metric,
+		Cgi:     cgi,
+		Metric:  metric,
 	}
 }
-

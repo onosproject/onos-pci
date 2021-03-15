@@ -33,34 +33,29 @@ func NewPciArbitratorController(targetE2NodeCgi *store.CGI, targetE2NodeMetric *
 	}
 }
 
-// Start is the function to run PCIArbitrator
-func (a *PciArbitratorCtrl) Start(pciMetricMap map[string]*store.CellPciNrt, globalPciMap map[string]int32) error {
-	return a.Run(pciMetricMap, globalPciMap)
-}
-
-// Run is the main function to arbitrate PCI
-func (a *PciArbitratorCtrl) Run(pciMetricMap map[string]*store.CellPciNrt, globalPciMap map[string]int32) error {
+// ArbitratePCI is the main function to arbitrate PCI, which returns error and the flag whether the app should send the control message to update PCI
+func (a *PciArbitratorCtrl) ArbitratePCI(pciMetricMap map[string]*store.CellPciNrt, globalPciMap map[string]int32) (bool, error) {
 	var err error
 	a.setD1NeighborPciMap(pciMetricMap, globalPciMap)
 	a.setD2NeighborPciMap(pciMetricMap, globalPciMap)
 
-	logArb.Infof("Global PCI Map: %v", globalPciMap)
-	logArb.Infof("D1 Neighbor PCIs: %v", a.D1NeighborPciMap)
-	logArb.Infof("D2 Neighbor PCIs: %v", a.D2NeighborPciMap)
+	logArb.Debugf("Original PCI for E2Node %v: %d", decode.CgiToString(a.TargetE2NodeCgi), a.TargetE2NodeMetric.Metric.Pci)
+	logArb.Debugf("Global PCI Map: %v", globalPciMap)
+	logArb.Debugf("D1 Neighbor PCIs: %v", a.D1NeighborPciMap)
+	logArb.Debugf("D2 Neighbor PCIs: %v", a.D2NeighborPciMap)
 
 	if a.verifyPci() {
 		logArb.Infof("PCI of E2Node %v is assigned to %d", decode.CgiToString(a.TargetE2NodeCgi), a.TargetE2NodeMetric.Metric.Pci)
-		return nil
+		return false, nil
 	}
 
 	a.TargetE2NodeMetric.Metric.Pci, err = a.getUniquePci()
 	if err != nil {
-		return err
+		return false, err
 	}
 	logArb.Infof("PCI of E2Node %v is assigned to %d", decode.CgiToString(a.TargetE2NodeCgi), a.TargetE2NodeMetric.Metric.Pci)
 
-	// push code to send control message
-	return nil
+	return true, nil
 }
 
 func (a *PciArbitratorCtrl) getUniquePci() (int32, error) {
