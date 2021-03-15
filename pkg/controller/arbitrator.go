@@ -39,10 +39,10 @@ func (a *PciArbitratorCtrl) ArbitratePCI(pciMetricMap map[string]*store.CellPciN
 	a.setD1NeighborPciMap(pciMetricMap, globalPciMap)
 	a.setD2NeighborPciMap(pciMetricMap, globalPciMap)
 
-	logArb.Infof("Original PCI for E2Node %v: %d", decode.CgiToString(a.TargetE2NodeCgi), a.TargetE2NodeMetric.Metric.Pci)
-	logArb.Infof("Global PCI Map: %v", globalPciMap)
-	logArb.Infof("D1 Neighbor PCIs: %v", a.D1NeighborPciMap)
-	logArb.Infof("D2 Neighbor PCIs: %v", a.D2NeighborPciMap)
+	logArb.Debugf("Original PCI for E2Node %v: %d", decode.CgiToString(a.TargetE2NodeCgi), a.TargetE2NodeMetric.Metric.Pci)
+	logArb.Debugf("Global PCI Map: %v", globalPciMap)
+	logArb.Debugf("D1 Neighbor PCIs: %v", a.D1NeighborPciMap)
+	logArb.Debugf("D2 Neighbor PCIs: %v", a.D2NeighborPciMap)
 
 	if a.verifyPci() {
 		logArb.Infof("PCI of E2Node %v is assigned to %d", decode.CgiToString(a.TargetE2NodeCgi), a.TargetE2NodeMetric.Metric.Pci)

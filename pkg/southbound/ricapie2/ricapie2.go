@@ -9,6 +9,7 @@ import (
 	"github.com/onosproject/onos-api/go/onos/e2sub/subscription"
 	e2tapi "github.com/onosproject/onos-api/go/onos/e2t/e2"
 	"github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/pdubuilder"
+	e2sm_rc_pre_ies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v1/e2sm-rc-pre-ies"
 	"github.com/onosproject/onos-e2t/pkg/southbound/e2ap/types"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-pci/pkg/southbound/admin"
@@ -19,7 +20,6 @@ import (
 	e2client "github.com/onosproject/onos-ric-sdk-go/pkg/e2"
 	"github.com/onosproject/onos-ric-sdk-go/pkg/e2/indication"
 	sdkSub "github.com/onosproject/onos-ric-sdk-go/pkg/e2/subscription"
-	e2sm_rc_pre_ies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v1/e2sm-rc-pre-ies"
 	"google.golang.org/protobuf/proto"
 	"strconv"
 	"strings"
@@ -213,10 +213,14 @@ func (s *E2Session) subscribeE2T(indChan chan *store.E2NodeIndication, nodeID st
 
 	e2SubHost := strings.Split(s.E2SubEndpoint, ":")[0]
 	e2SubPort, err := strconv.Atoi(strings.Split(s.E2SubEndpoint, ":")[1])
+	if err != nil {
+		log.Error("onos-e2sub's port information or endpoint information is wrong.")
+		return err
+	}
 	e2tHost := strings.Split(s.E2TEndpoint, ":")[0]
 	e2tPort, err := strconv.Atoi(strings.Split(s.E2TEndpoint, ":")[1])
 	if err != nil {
-		log.Error("onos-e2sub's port information or endpoint information is wrong.")
+		log.Error("onos-e2t's port information or endpoint information is wrong.")
 		return err
 	}
 
@@ -305,12 +309,12 @@ func (s *E2Session) subscribeE2T(indChan chan *store.E2NodeIndication, nodeID st
 }
 
 type E2SmRcPreControlHandler struct {
-	NodeID string
-	ServiceModelID string
-	ControlMessage []byte
-	ControlHeader []byte
+	NodeID            string
+	ServiceModelID    string
+	ControlMessage    []byte
+	ControlHeader     []byte
 	ControlAckRequest e2tapi.ControlAckRequest
-	EncodingType e2tapi.EncodingType
+	EncodingType      e2tapi.EncodingType
 }
 
 func (c *E2SmRcPreControlHandler) CreateRcControlRequest() (*e2tapi.ControlRequest, error) {
@@ -323,8 +327,8 @@ func (c *E2SmRcPreControlHandler) CreateRcControlRequest() (*e2tapi.ControlReque
 			},
 		},
 		ControlAckRequest: c.ControlAckRequest,
-		ControlHeader: c.ControlHeader,
-		ControlMessage: c.ControlMessage,
+		ControlHeader:     c.ControlHeader,
+		ControlMessage:    c.ControlMessage,
 	}
 	return controlRequest, nil
 }
@@ -332,7 +336,7 @@ func (c *E2SmRcPreControlHandler) CreateRcControlRequest() (*e2tapi.ControlReque
 func (c *E2SmRcPreControlHandler) CreateRcControlHeader(cellID uint64, cellIDLen uint32, priority int32, plmnID []byte) ([]byte, error) {
 	eci := &e2sm_rc_pre_ies.BitString{
 		Value: cellID,
-		Len: cellIDLen,
+		Len:   cellIDLen,
 	}
 	newE2SmRcPrePdu, err := pdubuilder.CreateE2SmRcPreControlHeader(priority, plmnID, eci)
 	if err != nil {

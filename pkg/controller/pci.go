@@ -20,7 +20,7 @@ var logPci = logging.GetLogger("controller", "pci")
 // PciCtrl is the controller for the KPI monitoring
 type PciCtrl struct {
 	IndChan           chan *store.E2NodeIndication
-	CtrlReqChans	  map[string]chan *e2tapi.ControlRequest
+	CtrlReqChans      map[string]chan *e2tapi.ControlRequest
 	PciMetricMap      map[string]*store.CellPciNrt
 	PciMetricMapMutex sync.RWMutex
 	GlobalPciMap      map[string]int32
@@ -93,9 +93,9 @@ func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderF
 	if changed {
 		// send control message to the E2Node
 		e2smRcPreControlHandler := &ricapie2.E2SmRcPreControlHandler{
-			NodeID: e2NodeID,
-			EncodingType: e2tapi.EncodingType_PROTO,
-			ServiceModelID: ricapie2.ServiceModelID,
+			NodeID:            e2NodeID,
+			EncodingType:      e2tapi.EncodingType_PROTO,
+			ServiceModelID:    ricapie2.ServiceModelID,
 			ControlAckRequest: e2tapi.ControlAckRequest_ACK,
 		}
 		cellID := header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue()
@@ -117,7 +117,7 @@ func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderF
 		if err != nil {
 			logPci.Errorf("Error when generating control request - %v", err)
 		}
-		logPci.Infof("Control Request message for e2NodeID %s: %v", e2NodeID, controlRequest)
+		logPci.Debugf("Control Request message for e2NodeID %s: %v", e2NodeID, controlRequest)
 		c.CtrlReqChans[e2NodeID] <- controlRequest
 	}
 	c.GlobalPciMap[decode.CgiToString(cgi)] = c.PciMetricMap[decode.CgiToString(cgi)].Metric.Pci

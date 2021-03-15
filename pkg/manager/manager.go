@@ -44,7 +44,7 @@ func NewManager(config Config) *Manager {
 			E2Session:    ricapie2.NewSession(config.E2tEndpoint, config.E2SubEndpoint, config.RicActionID, 0),
 		},
 		Chans: Channels{
-			IndCh: indCh,
+			IndCh:      indCh,
 			CtrlReqChs: ctrlReqChs,
 		},
 		Ctrls: Controllers{
@@ -69,7 +69,7 @@ type SBSessions struct {
 
 // Channels is a set of channels
 type Channels struct {
-	IndCh chan *store.E2NodeIndication
+	IndCh      chan *store.E2NodeIndication
 	CtrlReqChs map[string]chan *e2tapi.ControlRequest
 }
 
