@@ -213,6 +213,8 @@ func (s *E2Session) subscribeE2T(indChan chan *store.E2NodeIndication, nodeID st
 
 	e2SubHost := strings.Split(s.E2SubEndpoint, ":")[0]
 	e2SubPort, err := strconv.Atoi(strings.Split(s.E2SubEndpoint, ":")[1])
+	e2tHost := strings.Split(s.E2TEndpoint, ":")[0]
+	e2tPort, err := strconv.Atoi(strings.Split(s.E2TEndpoint, ":")[1])
 	if err != nil {
 		log.Error("onos-e2sub's port information or endpoint information is wrong.")
 		return err
@@ -220,6 +222,10 @@ func (s *E2Session) subscribeE2T(indChan chan *store.E2NodeIndication, nodeID st
 
 	clientConfig := e2client.Config{
 		AppID: "onos-pci",
+		E2TService: e2client.ServiceConfig{
+			Host: e2tHost,
+			Port: e2tPort,
+		},
 		SubscriptionService: e2client.ServiceConfig{
 			Host: e2SubHost,
 			Port: e2SubPort,
