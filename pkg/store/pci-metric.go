@@ -6,6 +6,7 @@ package store
 
 import (
 	e2smrcpreies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v1/e2sm-rc-pre-ies"
+	"github.com/onosproject/onos-ric-sdk-go/pkg/e2/indication"
 )
 
 // CGI is the ID for each cell
@@ -40,6 +41,11 @@ type NeighborCell struct {
 	NrIndex int32
 	Cgi     *CGI
 	Metric  *CellMetric
+}
+
+type E2NodeIndication struct {
+	NodeID string
+	IndMsg indication.Indication
 }
 
 // NewCGI makes a new CGI object and returns its address

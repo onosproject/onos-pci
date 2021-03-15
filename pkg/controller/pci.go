@@ -5,11 +5,12 @@
 package controller
 
 import (
+	e2tapi "github.com/onosproject/onos-api/go/onos/e2t/e2"
 	e2smrcpreies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v1/e2sm-rc-pre-ies"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
+	"github.com/onosproject/onos-pci/pkg/southbound/ricapie2"
 	"github.com/onosproject/onos-pci/pkg/store"
 	"github.com/onosproject/onos-pci/pkg/utils/decode"
-	"github.com/onosproject/onos-ric-sdk-go/pkg/e2/indication"
 	"google.golang.org/protobuf/proto"
 	"sync"
 )
@@ -18,17 +19,19 @@ var logPci = logging.GetLogger("controller", "pci")
 
 // PciCtrl is the controller for the KPI monitoring
 type PciCtrl struct {
-	IndChan           chan indication.Indication
+	IndChan           chan *store.E2NodeIndication
+	CtrlReqChans	  map[string]chan *e2tapi.ControlRequest
 	PciMetricMap      map[string]*store.CellPciNrt
 	PciMetricMapMutex sync.RWMutex
 	GlobalPciMap      map[string]int32
 }
 
 // NewPciController returns the struct for PCI logic
-func NewPciController(indChan chan indication.Indication) *PciCtrl {
+func NewPciController(indChan chan *store.E2NodeIndication, ctrlReqChs map[string]chan *e2tapi.ControlRequest) *PciCtrl {
 	logPci.Info("Start ONOS-PCI Application Controller")
 	return &PciCtrl{
 		IndChan:      indChan,
+		CtrlReqChans: ctrlReqChs,
 		PciMetricMap: make(map[string]*store.CellPciNrt),
 		GlobalPciMap: make(map[string]int32),
 	}
@@ -39,7 +42,7 @@ func (c *PciCtrl) Run() {
 	c.listenIndChan()
 }
 
-func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderFormat1, message *e2smrcpreies.E2SmRcPreIndicationMessageFormat1) {
+func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderFormat1, message *e2smrcpreies.E2SmRcPreIndicationMessageFormat1, e2NodeID string) {
 	logPci.Debugf("Header: %v", header)
 	logPci.Debugf("PLMN ID: %d", decode.PlmnIdToUint32(header.GetCgi().GetEUtraCgi().GetPLmnIdentity().GetValue()))
 	logPci.Debugf("ECID: %d", header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue())
@@ -83,9 +86,40 @@ func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderF
 	c.PciMetricMapMutex.Lock()
 	c.PciMetricMap[decode.CgiToString(cgi)] = cellPciNrt
 	pciArbitrator := NewPciArbitratorController(cgi, cellPciNrt)
-	err := pciArbitrator.Start(c.PciMetricMap, c.GlobalPciMap)
+	changed, err := pciArbitrator.ArbitratePCI(c.PciMetricMap, c.GlobalPciMap)
 	if err != nil {
 		logPci.Errorf("PCI Arbitrator has an error - %v", err)
+	}
+	if changed {
+		// send control message to the E2Node
+		e2smRcPreControlHandler := &ricapie2.E2SmRcPreControlHandler{
+			NodeID: e2NodeID,
+			EncodingType: e2tapi.EncodingType_PROTO,
+			ServiceModelID: ricapie2.ServiceModelID,
+			ControlAckRequest: e2tapi.ControlAckRequest_ACK,
+		}
+		cellID := header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue()
+		cellIdLen := header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen()
+		controlPriority := int32(10) //hard-coded at this moment; should be replaced with the other value
+		plmnID := header.GetCgi().GetEUtraCgi().GetPLmnIdentity().GetValue()
+		e2smRcPreControlHandler.ControlHeader, err = e2smRcPreControlHandler.CreateRcControlHeader(cellID, cellIdLen, controlPriority, plmnID)
+		if err != nil {
+			logPci.Errorf("Error when generating control header - %v", err)
+		}
+		ranParamID := int32(1)
+		ranParamName := "pci"
+		ranParamValue := cellPciNrt.Metric.Pci
+		e2smRcPreControlHandler.ControlMessage, err = e2smRcPreControlHandler.CreateRcControlMessage(ranParamID, ranParamName, ranParamValue)
+		if err != nil {
+			logPci.Errorf("Error when generating control message - %v", err)
+		}
+		controlRequest, err := e2smRcPreControlHandler.CreateRcControlRequest()
+		if err != nil {
+			logPci.Errorf("Error when generating control request - %v", err)
+		}
+		logPci.Infof("Control Request message for e2NodeID %s: %v", e2NodeID, controlRequest)
+		logPci.Infof("Control Chans: %v", c.CtrlReqChans)
+		c.CtrlReqChans[e2NodeID] <- controlRequest
 	}
 	c.GlobalPciMap[decode.CgiToString(cgi)] = c.PciMetricMap[decode.CgiToString(cgi)].Metric.Pci
 	c.PciMetricMapMutex.Unlock()
@@ -96,8 +130,8 @@ func (c *PciCtrl) listenIndChan() {
 	for indMsg := range c.IndChan {
 		logPci.Debugf("Raw message: %v", indMsg)
 
-		indHeaderByte := indMsg.Payload.Header
-		indMessageByte := indMsg.Payload.Message
+		indHeaderByte := indMsg.IndMsg.Payload.Header
+		indMessageByte := indMsg.IndMsg.Payload.Message
 
 		indHeader := e2smrcpreies.E2SmRcPreIndicationHeader{}
 		err = proto.Unmarshal(indHeaderByte, &indHeader)
@@ -111,6 +145,6 @@ func (c *PciCtrl) listenIndChan() {
 			logPci.Errorf("Error - Unmarshalling message protobytes to struct: %v", err)
 		}
 
-		c.storePciMetric(indHeader.GetIndicationHeaderFormat1(), indMessage.GetIndicationMessageFormat1())
+		c.storePciMetric(indHeader.GetIndicationHeaderFormat1(), indMessage.GetIndicationMessageFormat1(), indMsg.NodeID)
 	}
 }
