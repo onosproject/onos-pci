@@ -253,10 +253,12 @@ func (s *E2Session) subscribeE2T(indChan chan *store.E2NodeIndication, nodeID st
 	for {
 		select {
 		case indMsg := <-ch:
-			indChan <- &store.E2NodeIndication{
-				NodeID: nodeID,
-				IndMsg: indMsg,
-			}
+			go func() {
+				indChan <- &store.E2NodeIndication{
+					NodeID: nodeID,
+					IndMsg: indMsg,
+				}
+			}()
 		case ctrlReqMsg := <-ctrlReqChan:
 			log.Infof("Received E2Node: %v, Session E2Node: %v - Raw message: %v", ctrlReqMsg.E2NodeID, nodeID, ctrlReqMsg)
 			if string(ctrlReqMsg.E2NodeID) != nodeID {

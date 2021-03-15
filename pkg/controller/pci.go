@@ -118,7 +118,6 @@ func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderF
 			logPci.Errorf("Error when generating control request - %v", err)
 		}
 		logPci.Infof("Control Request message for e2NodeID %s: %v", e2NodeID, controlRequest)
-		logPci.Infof("Control Chans: %v", c.CtrlReqChans)
 		c.CtrlReqChans[e2NodeID] <- controlRequest
 	}
 	c.GlobalPciMap[decode.CgiToString(cgi)] = c.PciMetricMap[decode.CgiToString(cgi)].Metric.Pci
