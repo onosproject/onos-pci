@@ -8,6 +8,7 @@ require (
 	github.com/onosproject/onos-e2t v0.7.8
 	github.com/onosproject/onos-lib-go v0.7.5
 	github.com/onosproject/onos-ric-sdk-go v0.7.10
+	github.com/stretchr/testify v1.7.0
 	google.golang.org/grpc v1.33.2
 	google.golang.org/protobuf v1.25.0
 )
