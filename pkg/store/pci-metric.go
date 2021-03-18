@@ -48,6 +48,10 @@ type E2NodeIndication struct {
 	IndMsg indication.Indication
 }
 
+type PciStat struct {
+	NumConflicts int32
+}
+
 // NewCGI makes a new CGI object and returns its address
 func NewCGI(plmnID uint32, ecid uint64, ecidLen uint32) *CGI {
 	return &CGI{

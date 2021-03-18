@@ -15,6 +15,7 @@ import (
 	app "github.com/onosproject/onos-ric-sdk-go/pkg/config/app/default"
 	configurable "github.com/onosproject/onos-ric-sdk-go/pkg/config/registry"
 	configutils "github.com/onosproject/onos-ric-sdk-go/pkg/config/utils"
+	"sync"
 )
 
 var log = logging.GetLogger("manager")
@@ -36,7 +37,8 @@ func NewManager(config Config) *Manager {
 	log.Info("Creating Manager")
 	indCh := make(chan *store.E2NodeIndication)
 	ctrlReqChs := make(map[string]chan *e2tapi.ControlRequest)
-	//ctrlReqCh := make(chan *e2tapi.ControlRequest)
+	pciMon := make(map[string]*store.PciStat)
+	pciMonMutex := sync.RWMutex{}
 	return &Manager{
 		Config: config,
 		Sessions: SBSessions{
@@ -48,7 +50,10 @@ func NewManager(config Config) *Manager {
 			CtrlReqChs: ctrlReqChs,
 		},
 		Ctrls: Controllers{
-			pciCtrl: controller.NewPciController(indCh, ctrlReqChs),
+			pciCtrl: controller.NewPciController(indCh, ctrlReqChs, pciMon, &pciMonMutex),
+		},
+		Mons: Monitors{
+			PciMonitor: pciMon,
 		},
 	}
 }
@@ -59,6 +64,7 @@ type Manager struct {
 	Sessions SBSessions
 	Chans    Channels
 	Ctrls    Controllers
+	Mons     Monitors
 }
 
 // SBSessions is a set of Southbound sessions
@@ -76,6 +82,11 @@ type Channels struct {
 // Controllers is a set of controllers
 type Controllers struct {
 	pciCtrl *controller.PciCtrl
+}
+
+type Monitors struct {
+	PciMonitor      map[string]*store.PciStat
+	PciMonitorMutex sync.RWMutex
 }
 
 // Run starts the manager and the associated services

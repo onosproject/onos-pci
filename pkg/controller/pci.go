@@ -24,16 +24,21 @@ type PciCtrl struct {
 	PciMetricMap      map[string]*store.CellPciNrt
 	PciMetricMapMutex sync.RWMutex
 	GlobalPciMap      map[string]int32
+	// Monitor
+	PciMonitor      map[string]*store.PciStat
+	PciMonitorMutex *sync.RWMutex
 }
 
 // NewPciController returns the struct for PCI logic
-func NewPciController(indChan chan *store.E2NodeIndication, ctrlReqChs map[string]chan *e2tapi.ControlRequest) *PciCtrl {
+func NewPciController(indChan chan *store.E2NodeIndication, ctrlReqChs map[string]chan *e2tapi.ControlRequest, pciMonitor map[string]*store.PciStat, pciMonitorMutex *sync.RWMutex) *PciCtrl {
 	logPci.Info("Start ONOS-PCI Application Controller")
 	return &PciCtrl{
-		IndChan:      indChan,
-		CtrlReqChans: ctrlReqChs,
-		PciMetricMap: make(map[string]*store.CellPciNrt),
-		GlobalPciMap: make(map[string]int32),
+		IndChan:         indChan,
+		CtrlReqChans:    ctrlReqChs,
+		PciMetricMap:    make(map[string]*store.CellPciNrt),
+		GlobalPciMap:    make(map[string]int32),
+		PciMonitor:      pciMonitor,
+		PciMonitorMutex: pciMonitorMutex,
 	}
 }
 
@@ -86,6 +91,16 @@ func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderF
 	c.PciMetricMapMutex.Lock()
 	c.PciMetricMap[decode.CgiToString(cgi)] = cellPciNrt
 	pciArbitrator := NewPciArbitratorController(cgi, cellPciNrt)
+
+	// for Monitor
+	c.PciMonitorMutex.Lock()
+	if _, ok := c.PciMonitor[decode.CgiToString(cgi)]; !ok {
+		c.PciMonitor[decode.CgiToString(cgi)] = &store.PciStat{
+			NumConflicts: int32(0),
+		}
+	}
+	c.PciMonitorMutex.Unlock()
+
 	changed, err := pciArbitrator.ArbitratePCI(c.PciMetricMap, c.GlobalPciMap)
 	if err != nil {
 		logPci.Errorf("PCI Arbitrator has an error - %v", err)
@@ -122,6 +137,16 @@ func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderF
 	}
 	c.GlobalPciMap[decode.CgiToString(cgi)] = c.PciMetricMap[decode.CgiToString(cgi)].Metric.Pci
 	c.PciMetricMapMutex.Unlock()
+
+	// for Monitor
+	if changed {
+		c.PciMonitorMutex.Lock()
+		c.PciMonitor[decode.CgiToString(cgi)].NumConflicts++
+		c.PciMonitorMutex.Unlock()
+	}
+	c.PciMonitorMutex.RLock()
+	logPci.Infof("Num conflicts for %v: %d", decode.CgiToString(cgi), c.PciMonitor[decode.CgiToString(cgi)].NumConflicts)
+	c.PciMonitorMutex.RUnlock()
 }
 
 func (c *PciCtrl) listenIndChan() {
