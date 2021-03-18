@@ -21,7 +21,7 @@ func TestNewPciController(t *testing.T) {
 		PciMetricMap: make(map[string]*store.CellPciNrt),
 		GlobalPciMap: make(map[string]int32),
 	}
-	targetPciController := NewPciController(sampleIndChan, sampleCtrlReqChans)
+	targetPciController := NewPciController(sampleIndChan, sampleCtrlReqChans, nil, nil)
 	fmt.Printf("samplePciController: %v\n", &samplePciController)
 	fmt.Printf("targetPciController: %v\n", targetPciController)
 
