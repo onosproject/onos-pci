@@ -175,7 +175,7 @@ func (s Server) GetPci(ctx context.Context, request *pciapi.GetRequest) (*pciapi
 	id := request.GetId()
 	attr := make(map[string]string)
 	s.Ctrl.PciMetricMapMutex.RLock()
-	pci := s.Ctrl.PciMetricMap[id].Metric.Pci
+	pci := s.Ctrl.GlobalPciMap[id]
 	s.Ctrl.PciMetricMapMutex.RUnlock()
 
 	attr[id] = fmt.Sprintf("%d", pci)
@@ -195,8 +195,8 @@ func (s Server) GetPciAll(ctx context.Context, request *pciapi.GetRequest) (*pci
 	// ignore ID here since it will return results for all cells
 	attr := make(map[string]string)
 	s.Ctrl.PciMetricMapMutex.RLock()
-	for k, v := range s.Ctrl.PciMetricMap {
-		attr[k] = fmt.Sprintf("%d", v.Metric.Pci)
+	for k, v := range s.Ctrl.GlobalPciMap {
+		attr[k] = fmt.Sprintf("%d", v)
 	}
 	s.Ctrl.PciMetricMapMutex.RUnlock()
 
