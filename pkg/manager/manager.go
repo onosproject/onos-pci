@@ -15,6 +15,7 @@ import (
 	app "github.com/onosproject/onos-ric-sdk-go/pkg/config/app/default"
 	configurable "github.com/onosproject/onos-ric-sdk-go/pkg/config/registry"
 	configutils "github.com/onosproject/onos-ric-sdk-go/pkg/config/utils"
+	nbi "github.com/onosproject/onos-pci/pkg/northbound"
 	"sync"
 )
 
@@ -50,7 +51,7 @@ func NewManager(config Config) *Manager {
 			CtrlReqChs: ctrlReqChs,
 		},
 		Ctrls: Controllers{
-			pciCtrl: controller.NewPciController(indCh, ctrlReqChs, pciMon, &pciMonMutex),
+			PciCtrl: controller.NewPciController(indCh, ctrlReqChs, pciMon, &pciMonMutex),
 		},
 		Mons: Monitors{
 			PciMonitor: pciMon,
@@ -81,7 +82,7 @@ type Channels struct {
 
 // Controllers is a set of controllers
 type Controllers struct {
-	pciCtrl *controller.PciCtrl
+	PciCtrl *controller.PciCtrl
 }
 
 type Monitors struct {
@@ -120,7 +121,7 @@ func (m *Manager) Start() error {
 	}
 
 	go m.Sessions.E2Session.Run(m.Chans.IndCh, m.Chans.CtrlReqChs, m.Sessions.AdminSession)
-	go m.Ctrls.pciCtrl.Run()
+	go m.Ctrls.PciCtrl.Run()
 	return nil
 }
 
@@ -148,8 +149,7 @@ func (m *Manager) startNorthboundServer() error {
 		true,
 		northbound.SecurityConfig{}))
 
-	// service should be registered
-	//s.AddService(nbi.NewService(m.Ctrls.PciCtrl))
+	s.AddService(nbi.NewService(m.Ctrls.PciCtrl))
 
 	doneCh := make(chan error)
 	go func() {
