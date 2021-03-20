@@ -145,7 +145,7 @@ func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderF
 		c.PciMonitorMutex.Unlock()
 	}
 	c.PciMonitorMutex.RLock()
-	logPci.Infof("Num conflicts for %v: %d", decode.CgiToString(cgi), c.PciMonitor[decode.CgiToString(cgi)].NumConflicts)
+	logPci.Debugf("Num conflicts for %v: %d", decode.CgiToString(cgi), c.PciMonitor[decode.CgiToString(cgi)].NumConflicts)
 	c.PciMonitorMutex.RUnlock()
 }
 

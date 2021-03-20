@@ -75,13 +75,14 @@ github.com/magiconair/properties
 github.com/mitchellh/go-homedir
 # github.com/mitchellh/mapstructure v1.3.3
 github.com/mitchellh/mapstructure
-# github.com/onosproject/onos-api/go v0.7.16
+# github.com/onosproject/onos-api/go v0.7.18
 ## explicit
 github.com/onosproject/onos-api/go/onos/e2sub/endpoint
 github.com/onosproject/onos-api/go/onos/e2sub/subscription
 github.com/onosproject/onos-api/go/onos/e2sub/task
 github.com/onosproject/onos-api/go/onos/e2t/admin
 github.com/onosproject/onos-api/go/onos/e2t/e2
+github.com/onosproject/onos-api/go/onos/pci
 github.com/onosproject/onos-api/go/onos/ransim/types
 # github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre v0.7.11
 ## explicit
