@@ -17,8 +17,6 @@ import (
 )
 
 func (s *TestSuite) TestThreeCellPci(t *testing.T) {
-	sim := utils.CreateRanSimulatorWithNameOrDie(t, "e2epci")
-
 	indCh := make(chan indication.Indication)
 
 	e2IndCh := make(chan *store.E2NodeIndication)
@@ -44,6 +42,7 @@ func (s *TestSuite) TestThreeCellPci(t *testing.T) {
 	// Indication message block
 	go func() {
 		for {
+			t.Logf("Num received indication messages: %d\n", numIndMsg)
 			if numIndMsg >= 3 {
 				t.Log("Received three indication messages - Succeed so far")
 				break
@@ -55,7 +54,7 @@ func (s *TestSuite) TestThreeCellPci(t *testing.T) {
 					IndMsg: indMsg,
 				}
 				numIndMsg++
-			case <- time.After(10 * time.Second):
+			case <- time.After(60 * time.Second):
 				t.Fatal("Indication message did not arrive before timer was expired")
 			}
 		}
@@ -65,6 +64,7 @@ func (s *TestSuite) TestThreeCellPci(t *testing.T) {
 
 	// Control message block
 	for {
+		t.Logf("Num sent control messages: %d\n", numCtrlMsg)
 		if numCtrlMsg >= 3 {
 			t.Log("Received three control messages - Succeed so far")
 			break
@@ -73,7 +73,7 @@ func (s *TestSuite) TestThreeCellPci(t *testing.T) {
 		case ctrlMsg := <- ctrlReqChMap[nodeIDs[0]]:
 			t.Logf("Received control message: %v", ctrlMsg)
 			numCtrlMsg++
-		case <- time.After(10 * time.Second):
+		case <- time.After(60 * time.Second):
 			t.Fatal("Control message did not arrive before timer was expired")
 		}
 	}
@@ -81,6 +81,4 @@ func (s *TestSuite) TestThreeCellPci(t *testing.T) {
 	err = sub.Close()
 	assert.NoError(t, err)
 
-	err = sim.Uninstall()
-	assert.NoError(t, err)
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/onosproject/onos-ric-sdk-go/pkg/e2/indication"
 	e2subscription "github.com/onosproject/onos-ric-sdk-go/pkg/e2/subscription"
 	"google.golang.org/protobuf/proto"
+	"time"
 )
 
 func CreatePciSubscriptionSingle (indCh chan indication.Indication, ctrlReqMap map[string]chan *e2tapi.ControlRequest) (e2subscription.Context, error) {
@@ -31,6 +32,8 @@ func CreatePciSubscriptionSingle (indCh chan indication.Indication, ctrlReqMap m
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	time.Sleep(10 * time.Second)
 
 	nodeIDs, err := GetNodeIDs()
 	if err != nil {
@@ -60,7 +63,7 @@ func CreatePciSubscriptionDetails (nodeID string) (subscription.SubscriptionDeta
 	return subscription.SubscriptionDetails{
 		E2NodeID: subscription.E2NodeID(nodeID),
 		ServiceModel: subscription.ServiceModel{
-			ID: subscription.ServiceModelID(nodeID),
+			ID: subscription.ServiceModelID(RcServiceModelID),
 		},
 		EventTrigger: subscription.EventTrigger{
 			Payload: subscription.Payload{

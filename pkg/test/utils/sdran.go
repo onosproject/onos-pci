@@ -41,10 +41,8 @@ func CreateSdranRelease() (*helm.HelmRelease, error) {
 		SetPassword(password).
 		Set("import.onos-config.enabled", false).
 		Set("import.onos-topo.enabled", false).
-		Set("onos-e2t.image.tag", "latest").
-		Set("onos-e2sub.image.tag", "latest").
-		Set("ran-simulator.image.tag", "latest").
-		Set("onos-pci.image.tag", "latest").
+		Set("import.ran-simulator.enabled", true).
+		Set("import.onos-pci.enabled", false).
 		Set("ran-simulator.pci.metricName", "three-cell-metrics").
 		Set("ran-simulator.pci.modelName", "three-cell-model")
 
