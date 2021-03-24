@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func CreatePciSubscriptionSingle (indCh chan indication.Indication, ctrlReqMap map[string]chan *e2tapi.ControlRequest) (e2subscription.Context, error) {
+func CreatePciSubscriptionSingle(indCh chan indication.Indication, ctrlReqMap map[string]chan *e2tapi.ControlRequest) (e2subscription.Context, error) {
 	clientConfig := e2client.Config{
 		AppID: "e2epci-test",
 		SubscriptionService: e2client.ServiceConfig{
@@ -55,7 +55,7 @@ func CreatePciSubscriptionSingle (indCh chan indication.Indication, ctrlReqMap m
 	return sub, nil
 }
 
-func CreatePciSubscriptionDetails (nodeID string) (subscription.SubscriptionDetails, error) {
+func CreatePciSubscriptionDetails(nodeID string) (subscription.SubscriptionDetails, error) {
 	data, err := CreatePciEventTrigger()
 	if err != nil {
 		return subscription.SubscriptionDetails{}, err
@@ -63,7 +63,8 @@ func CreatePciSubscriptionDetails (nodeID string) (subscription.SubscriptionDeta
 	return subscription.SubscriptionDetails{
 		E2NodeID: subscription.E2NodeID(nodeID),
 		ServiceModel: subscription.ServiceModel{
-			ID: subscription.ServiceModelID(RcServiceModelID),
+			Name:    RcServiceModelName,
+			Version: RcServiceModelVersion,
 		},
 		EventTrigger: subscription.EventTrigger{
 			Payload: subscription.Payload{

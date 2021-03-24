@@ -689,7 +689,7 @@ func (n *Runner) createSecrets(job *Job) error {
 		},
 		Data: secretData,
 	}
-	n.Clientset().CoreV1().Secrets(n.Namespace()).Create(secret)
+	_, _ = n.Clientset().CoreV1().Secrets(n.Namespace()).Create(secret)
 
 	return nil
 }
