@@ -11,6 +11,6 @@ import (
 )
 
 func main() {
-	registry.RegisterTestSuite("pci", pci.TestSuite{})
+	registry.RegisterTestSuite("pci", &pci.TestSuite{})
 	test.Main()
 }
