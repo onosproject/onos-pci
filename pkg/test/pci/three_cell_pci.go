@@ -31,7 +31,7 @@ func (s *TestSuite) TestThreeCellPci(t *testing.T) {
 	assert.NoError(t, err)
 
 	var nodeIDs []string
-	for k, _ := range ctrlReqChMap {
+	for k := range ctrlReqChMap {
 		nodeIDs = append(nodeIDs, k)
 	}
 
@@ -55,7 +55,7 @@ func (s *TestSuite) TestThreeCellPci(t *testing.T) {
 				}
 				numIndMsg++
 			case <- time.After(60 * time.Second):
-				t.Fatal("Indication message did not arrive before timer was expired")
+				t.Error("Indication message did not arrive before timer was expired")
 			}
 		}
 	}()
