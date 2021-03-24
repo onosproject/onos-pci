@@ -7,7 +7,7 @@ package main
 import (
 	"github.com/onosproject/helmit/pkg/registry"
 	"github.com/onosproject/helmit/pkg/test"
-	"github.com/onosproject/onos-pci/test/pci"
+	"github.com/onosproject/onos-pci/pkg/test/pci"
 )
 
 func main() {

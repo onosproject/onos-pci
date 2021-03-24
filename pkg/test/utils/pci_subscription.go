@@ -5,6 +5,7 @@
 package utils
 
 import (
+	"context"
 	"github.com/onosproject/onos-api/go/onos/e2sub/subscription"
 	e2tapi "github.com/onosproject/onos-api/go/onos/e2t/e2"
 	"github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/pdubuilder"
@@ -12,7 +13,6 @@ import (
 	"github.com/onosproject/onos-ric-sdk-go/pkg/e2/indication"
 	e2subscription "github.com/onosproject/onos-ric-sdk-go/pkg/e2/subscription"
 	"google.golang.org/protobuf/proto"
-	"context"
 )
 
 func CreatePciSubscriptionSingle (indCh chan indication.Indication, ctrlReqMap map[string]chan *e2tapi.ControlRequest) (e2subscription.Context, error) {

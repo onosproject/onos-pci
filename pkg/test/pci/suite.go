@@ -6,7 +6,7 @@ package pci
 
 import (
 	"github.com/onosproject/helmit/pkg/test"
-	"github.com/onosproject/onos-pci/test/utils"
+	"github.com/onosproject/onos-pci/pkg/test/utils"
 )
 
 // TestSuite is the primary onos-pci test suite
