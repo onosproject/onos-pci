@@ -11,7 +11,8 @@ import (
 const (
 	SubscriptionServiceHost = "onos-e2sub"
 	SubscriptionServicePort = 5150
-	RcServiceModelID        = "e2sm_rc_pre-v1"
+	RcServiceModelName      = "oran-e2sm-rc-pre"
+	RcServiceModelVersion   = "v1"
 	RansimServicePort       = 5150
 )
 

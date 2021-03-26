@@ -27,5 +27,5 @@ func TestCgiToString(t *testing.T) {
 		EcidLen: uint32(28),
 	}
 
-	assert.Equal(t, CgiToString(sampleCGI), "21458294227554")
+	assert.Equal(t, CgiToString(sampleCGI), "343332706402914")
 }

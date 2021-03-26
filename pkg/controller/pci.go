@@ -108,10 +108,11 @@ func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderF
 	if changed {
 		// send control message to the E2Node
 		e2smRcPreControlHandler := &ricapie2.E2SmRcPreControlHandler{
-			NodeID:            e2NodeID,
-			EncodingType:      e2tapi.EncodingType_PROTO,
-			ServiceModelID:    ricapie2.ServiceModelID,
-			ControlAckRequest: e2tapi.ControlAckRequest_ACK,
+			NodeID:              e2NodeID,
+			EncodingType:        e2tapi.EncodingType_PROTO,
+			ServiceModelName:    ricapie2.ServiceModelName,
+			ServiceModelVersion: ricapie2.ServiceModelVersion,
+			ControlAckRequest:   e2tapi.ControlAckRequest_ACK,
 		}
 		cellID := header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue()
 		cellIdLen := header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen()

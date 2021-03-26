@@ -30,7 +30,8 @@ import (
 var log = logging.GetLogger("sb-ricapie2")
 
 const (
-	ServiceModelID         = "e2sm_rc_pre-v1"
+	ServiceModelName       = "oran-e2sm-rc-pre"
+	ServiceModelVersion    = "v1"
 	ReportPeriodConfigPath = "/report_period/interval"
 )
 
@@ -164,7 +165,8 @@ func (s *E2Session) createSubscriptionRequest(nodeID string) (subscription.Subsc
 	return subscription.SubscriptionDetails{
 		E2NodeID: subscription.E2NodeID(nodeID),
 		ServiceModel: subscription.ServiceModel{
-			ID: subscription.ServiceModelID(ServiceModelID),
+			Name:    ServiceModelName,
+			Version: ServiceModelVersion,
 		},
 		EventTrigger: subscription.EventTrigger{
 			Payload: subscription.Payload{
@@ -311,12 +313,13 @@ func (s *E2Session) subscribeE2T(indChan chan *store.E2NodeIndication, nodeID st
 }
 
 type E2SmRcPreControlHandler struct {
-	NodeID            string
-	ServiceModelID    string
-	ControlMessage    []byte
-	ControlHeader     []byte
-	ControlAckRequest e2tapi.ControlAckRequest
-	EncodingType      e2tapi.EncodingType
+	NodeID              string
+	ServiceModelName    e2tapi.ServiceModelName
+	ServiceModelVersion e2tapi.ServiceModelVersion
+	ControlMessage      []byte
+	ControlHeader       []byte
+	ControlAckRequest   e2tapi.ControlAckRequest
+	EncodingType        e2tapi.EncodingType
 }
 
 func (c *E2SmRcPreControlHandler) CreateRcControlRequest() (*e2tapi.ControlRequest, error) {
@@ -325,7 +328,8 @@ func (c *E2SmRcPreControlHandler) CreateRcControlRequest() (*e2tapi.ControlReque
 		Header: &e2tapi.RequestHeader{
 			EncodingType: c.EncodingType,
 			ServiceModel: &e2tapi.ServiceModel{
-				ID: e2tapi.ServiceModelID(c.ServiceModelID),
+				Name:    c.ServiceModelName,
+				Version: c.ServiceModelVersion,
 			},
 		},
 		ControlAckRequest: c.ControlAckRequest,

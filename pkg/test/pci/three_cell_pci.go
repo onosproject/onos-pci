@@ -65,7 +65,7 @@ func (s *TestSuite) TestThreeCellPci(t *testing.T) {
 	// Control message block
 	for {
 		t.Logf("Num sent control messages: %d\n", numCtrlMsg)
-		if numCtrlMsg >= 3 {
+		if numCtrlMsg >= 2 {
 			t.Log("Received three control messages - Succeed so far")
 			break
 		}
