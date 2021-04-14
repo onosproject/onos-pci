@@ -141,6 +141,7 @@ func (s *E2Session) manageConnections(indChan chan *store.E2NodeIndication, ctrl
 			hasOID, err := s.checkOID(id, adminSession)
 			if err != nil {
 				log.Error(err)
+				continue
 			} else if !hasOID {
 				log.Warnf("E2Node %v does not support RC Pre Service model (OID: %v)", id, RCPreServiceModelOIDV1)
 				continue
