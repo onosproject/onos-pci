@@ -138,10 +138,6 @@ func (s *E2Session) manageConnections(indChan chan *store.E2NodeIndication, ctrl
 		log.Infof("Received E2Nodes: %v", nodeIDs)
 		var wg sync.WaitGroup
 		for _, id := range nodeIDs {
-			if _, ok := ctrlReqChans[id]; !ok {
-				ctrlReqChans[id] = make(chan *e2tapi.ControlRequest)
-				log.Infof("CtrlReqChans: %v", ctrlReqChans)
-			}
 			hasOID, err := s.checkOID(id, adminSession)
 			if err != nil {
 				log.Error(err)
@@ -151,7 +147,10 @@ func (s *E2Session) manageConnections(indChan chan *store.E2NodeIndication, ctrl
 			}
 
 			log.Infof("E2Node %v supports RC Pre service - trying to send subscription message", id)
-
+			if _, ok := ctrlReqChans[id]; !ok {
+				ctrlReqChans[id] = make(chan *e2tapi.ControlRequest)
+				log.Infof("CtrlReqChans: %v", ctrlReqChans)
+			}
 
 			wg.Add(1)
 			go func(id string, wg *sync.WaitGroup) {
