@@ -162,6 +162,7 @@ func (s *E2Session) manageConnections(indChan chan *store.E2NodeIndication, ctrl
 			}(id, &wg)
 		}
 		wg.Wait()
+		time.Sleep(1000 * time.Millisecond) // retry timer
 	}
 }
 
