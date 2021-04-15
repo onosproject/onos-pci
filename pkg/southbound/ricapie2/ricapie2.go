@@ -27,6 +27,8 @@ import (
 	"time"
 )
 
+const RCPreServiceModelOIDV1 = "1.3.6.1.4.1.53148.1.1.2.100"
+
 var log = logging.GetLogger("sb-ricapie2")
 
 const (
@@ -136,6 +138,16 @@ func (s *E2Session) manageConnections(indChan chan *store.E2NodeIndication, ctrl
 		log.Infof("Received E2Nodes: %v", nodeIDs)
 		var wg sync.WaitGroup
 		for _, id := range nodeIDs {
+			hasOID, err := s.checkOID(id, adminSession)
+			if err != nil {
+				log.Error(err)
+				continue
+			} else if !hasOID {
+				log.Warnf("E2Node %v does not support RC Pre Service model (OID: %v)", id, RCPreServiceModelOIDV1)
+				continue
+			}
+
+			log.Infof("E2Node %v supports RC Pre service - trying to send subscription message", id)
 			if _, ok := ctrlReqChans[id]; !ok {
 				ctrlReqChans[id] = make(chan *e2tapi.ControlRequest)
 				log.Infof("CtrlReqChans: %v", ctrlReqChans)
@@ -150,7 +162,23 @@ func (s *E2Session) manageConnections(indChan chan *store.E2NodeIndication, ctrl
 			}(id, &wg)
 		}
 		wg.Wait()
+		time.Sleep(1000 * time.Millisecond) // retry timer
 	}
+}
+
+func (s *E2Session) checkOID(nodeID string, session *admin.E2AdminSession) (bool, error) {
+	ranFunctions, err := session.GetRANFunctions(nodeID)
+	if err != nil {
+		return false, err
+	}
+
+	for _, ranFunction := range ranFunctions {
+		log.Debugf("ranFunction.Oid (%v): %v", ranFunction.Description, ranFunction.Oid)
+		if ranFunction.Oid == RCPreServiceModelOIDV1 {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (s *E2Session) manageConnection(indChan chan *store.E2NodeIndication, nodeID string, ctrlReqChan chan *e2tapi.ControlRequest) {
