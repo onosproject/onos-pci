@@ -42,9 +42,7 @@ func CreateSdranRelease() (*helm.HelmRelease, error) {
 		Set("import.onos-config.enabled", false).
 		Set("import.onos-topo.enabled", false).
 		Set("import.ran-simulator.enabled", true).
-		Set("import.onos-pci.enabled", false).
-		Set("ran-simulator.pci.metricName", "three-cell-metrics").
-		Set("ran-simulator.pci.modelName", "three-cell-model")
+		Set("import.onos-pci.enabled", false)
 
 	return sdran, nil
 }

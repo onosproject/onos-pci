@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: LicenseRef-ONF-Member-1.0
 
-package pci
+package scale
 
 import (
 	"github.com/onosproject/helmit/pkg/test"
@@ -17,10 +17,10 @@ type TestSuite struct {
 // SetupTestSuite sets up the onos-pci test suite
 func (s *TestSuite) SetupTestSuite() error {
 	sdran, err := utils.CreateSdranRelease()
-	sdran.Set("ran-simulator.pci.metricName", "three-cell-metrics").
-		Set("ran-simulator.pci.modelName", "three-cell-model")
 	if err != nil {
 		return err
 	}
+	sdran.Set("ran-simulator.pci.metricName", "scale-rc-pci").
+		Set("ran-simulator.pci.modelName", "scale-model")
 	return sdran.Install(true)
 }
