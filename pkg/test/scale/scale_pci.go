@@ -7,9 +7,9 @@ package scale
 import (
 	"github.com/onosproject/onos-lib-go/pkg/certs"
 	"github.com/onosproject/onos-pci/pkg/manager"
+	"log"
 	"testing"
 	"time"
-	"log"
 )
 
 func (s *TestSuite) TestScalePci(t *testing.T) {
@@ -18,9 +18,10 @@ func (s *TestSuite) TestScalePci(t *testing.T) {
 	e2subEndpoint := "onos-e2sub:5150"
 
 	cfg := manager.Config{
-		CAPath:        "certs/tls.cacrt",
-		KeyPath:        "certs/tls.key",
-		CertPath:        "certs/tls.crt",
+		CAPath:        "onos-pci/files/certs/tls.cacrt",
+		KeyPath:       "onos-pci/files/certs/tls.key",
+		CertPath:      "onos-pci/files/certs/tls.crt",
+		ConfigPath:    "onos-pci/files/configs/config.json",
 		E2tEndpoint:   e2tEndpoint,
 		E2SubEndpoint: e2subEndpoint,
 		GRPCPort:      5150,
@@ -40,7 +41,7 @@ func (s *TestSuite) TestScalePci(t *testing.T) {
 	for {
 		time.Sleep(1 * time.Second)
 		mgr.Mons.PciMonitorMutex.RLock()
-		log.Printf("mgr.Mons.PciMonitor: %v", mgr.Mons.PciMonitor)
+		log.Printf("mgr.Mons.PciMonitor (length: %d): %v", len(mgr.Mons.PciMonitor), mgr.Mons.PciMonitor)
 		mgr.Mons.PciMonitorMutex.RUnlock()
 
 	}
