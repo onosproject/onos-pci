@@ -42,6 +42,9 @@ func (s *TestSuite) TestScalePci(t *testing.T) {
 		time.Sleep(1 * time.Second)
 		mgr.Mons.PciMonitorMutex.RLock()
 		log.Printf("mgr.Mons.PciMonitor (length: %d): %v", len(mgr.Mons.PciMonitor), mgr.Mons.PciMonitor)
+		for k, v := range mgr.Mons.PciMonitor {
+			log.Printf("ID %s: %d\n", k, v)
+		}
 		mgr.Mons.PciMonitorMutex.RUnlock()
 
 	}
