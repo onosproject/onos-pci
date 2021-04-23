@@ -5,6 +5,7 @@
 package scale
 
 import (
+	"fmt"
 	"github.com/onosproject/onos-lib-go/pkg/certs"
 	"github.com/onosproject/onos-pci/pkg/manager"
 	"github.com/onosproject/onos-pci/pkg/store"
@@ -12,6 +13,7 @@ import (
 	"log"
 	"testing"
 	"time"
+	"os"
 )
 
 func (s *TestSuite) TestScalePci(t *testing.T) {
@@ -58,8 +60,20 @@ func (s *TestSuite) TestScalePci(t *testing.T) {
 		select {
 		case <- timer:
 			mgr.Mons.PciMonitorMutex.RLock()
-			assert.GreaterOrEqual(t, 1, mgr.Mons.PciMonitor["343332707642115"])
+			if mgr.Mons.PciMonitor["343332707642115"].NumConflicts >= 1 {
+				numConflicts = mgr.Mons.PciMonitor["343332707642115"].NumConflicts
+				mgr.Mons.PciMonitorMutex.RUnlock()
+				break
+			}
+			if mgr.Mons.PciMonitor["343332707642118"].NumConflicts >= 1 {
+				numConflicts = mgr.Mons.PciMonitor["343332707642118"].NumConflicts
+				mgr.Mons.PciMonitorMutex.RUnlock()
+				break
+			}
 			mgr.Mons.PciMonitorMutex.RUnlock()
+			assert.NoError(t, fmt.Errorf("Timer experied"))
+			os.Exit(1)
+
 		case st := <- resultCh:
 			mgr.Mons.PciMonitorMutex.RLock()
 			if _, ok := st["343332707642115"]; !ok {
@@ -75,11 +89,13 @@ func (s *TestSuite) TestScalePci(t *testing.T) {
 			log.Printf("num conflicts for %s is %d", "343332707642115", st["343332707642115"].NumConflicts)
 			if st["343332707642115"].NumConflicts >= 1 {
 				numConflicts = st["343332707642115"].NumConflicts
+				mgr.Mons.PciMonitorMutex.RUnlock()
 				break
 			}
 			log.Printf("num conflicts for %s is %d", "343332707642118", st["343332707642118"].NumConflicts)
 			if st["343332707642118"].NumConflicts >= 1 {
 				numConflicts = st["343332707642118"].NumConflicts
+				mgr.Mons.PciMonitorMutex.RUnlock()
 				break
 			}
 			mgr.Mons.PciMonitorMutex.RUnlock()
