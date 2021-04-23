@@ -62,6 +62,16 @@ func (s *TestSuite) TestScalePci(t *testing.T) {
 			mgr.Mons.PciMonitorMutex.RUnlock()
 		case st := <- resultCh:
 			mgr.Mons.PciMonitorMutex.RLock()
+			if _, ok := st["343332707642115"]; !ok {
+				continue
+			}
+			if _, ok := st["343332707642118"]; !ok {
+				continue
+			}
+			if st["343332707642115"] == nil || st["343332707642118"] == nil {
+				continue
+			}
+
 			log.Printf("num conflicts for %s is %d", "343332707642115", st["343332707642115"].NumConflicts)
 			if st["343332707642115"].NumConflicts >= 1 {
 				numConflicts = st["343332707642115"].NumConflicts
