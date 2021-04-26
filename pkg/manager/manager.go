@@ -9,13 +9,13 @@ import (
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-lib-go/pkg/northbound"
 	"github.com/onosproject/onos-pci/pkg/controller"
+	nbi "github.com/onosproject/onos-pci/pkg/northbound"
 	"github.com/onosproject/onos-pci/pkg/southbound/admin"
 	"github.com/onosproject/onos-pci/pkg/southbound/ricapie2"
 	"github.com/onosproject/onos-pci/pkg/store"
 	app "github.com/onosproject/onos-ric-sdk-go/pkg/config/app/default"
 	configurable "github.com/onosproject/onos-ric-sdk-go/pkg/config/registry"
 	configutils "github.com/onosproject/onos-ric-sdk-go/pkg/config/utils"
-	nbi "github.com/onosproject/onos-pci/pkg/northbound"
 	"sync"
 )
 
@@ -26,6 +26,7 @@ type Config struct {
 	CAPath        string
 	KeyPath       string
 	CertPath      string
+	ConfigPath    string
 	E2tEndpoint   string
 	E2SubEndpoint string
 	GRPCPort      int
@@ -132,7 +133,7 @@ func (m *Manager) Close() {
 
 // registerConfigurable registers the xApp as a configurable entity
 func (m *Manager) registerConfigurable() error {
-	appConfig, err := configurable.RegisterConfigurable(&configurable.RegisterRequest{})
+	appConfig, err := configurable.RegisterConfigurable(m.Config.ConfigPath, &configurable.RegisterRequest{})
 	if err != nil {
 		return err
 	}
