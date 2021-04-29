@@ -137,7 +137,7 @@ github.com/docker/go-units
 # github.com/docker/spdystream v0.0.0-20160310174837-449fdfce4d96
 github.com/docker/spdystream
 github.com/docker/spdystream/spdy
-# github.com/dustinkirkland/golang-petname v0.0.0-20190613200456-11339a705ed2
+# github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0
 github.com/dustinkirkland/golang-petname
 # github.com/eapache/go-resiliency v1.2.0
 github.com/eapache/go-resiliency/breaker
@@ -293,7 +293,7 @@ github.com/modern-go/concurrent
 github.com/modern-go/reflect2
 # github.com/morikuni/aec v1.0.0
 github.com/morikuni/aec
-# github.com/onosproject/helmit v0.6.10
+# github.com/onosproject/helmit v0.6.11
 ## explicit
 github.com/onosproject/helmit/pkg/helm
 github.com/onosproject/helmit/pkg/job
@@ -339,7 +339,7 @@ github.com/onosproject/onos-e2t/api/e2ap/v1beta1/e2ap-commondatatypes
 github.com/onosproject/onos-e2t/api/e2ap/v1beta1/e2ap-constants
 github.com/onosproject/onos-e2t/api/e2ap/v1beta1/e2apies
 github.com/onosproject/onos-e2t/pkg/southbound/e2ap/types
-# github.com/onosproject/onos-lib-go v0.7.7
+# github.com/onosproject/onos-lib-go v0.7.10
 ## explicit
 github.com/onosproject/onos-lib-go/api/logging
 github.com/onosproject/onos-lib-go/pkg/auth
@@ -498,7 +498,7 @@ golang.org/x/oauth2/internal
 # golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.0.0-20201113233024-12cec1faf1ba
+# golang.org/x/sys v0.0.0-20210317225723-c4fcb01b228e
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
