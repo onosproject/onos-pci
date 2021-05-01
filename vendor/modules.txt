@@ -293,9 +293,10 @@ github.com/modern-go/concurrent
 github.com/modern-go/reflect2
 # github.com/morikuni/aec v1.0.0
 github.com/morikuni/aec
-# github.com/onosproject/helmit v0.6.11
+# github.com/onosproject/helmit v0.6.12
 ## explicit
 github.com/onosproject/helmit/pkg/helm
+github.com/onosproject/helmit/pkg/input
 github.com/onosproject/helmit/pkg/job
 github.com/onosproject/helmit/pkg/kubernetes
 github.com/onosproject/helmit/pkg/kubernetes/admissionregistration/v1

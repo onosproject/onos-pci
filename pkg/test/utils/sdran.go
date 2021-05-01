@@ -5,6 +5,7 @@
 package utils
 
 import (
+	"github.com/onosproject/helmit/pkg/input"
 	"testing"
 
 	"github.com/onosproject/helmit/pkg/helm"
@@ -29,8 +30,10 @@ func getCredentials() (string, string, error) {
 }
 
 // CreateSdranRelease creates a helm release for an sd-ran instance
-func CreateSdranRelease() (*helm.HelmRelease, error) {
+func CreateSdranRelease(c *input.Context) (*helm.HelmRelease, error) {
 	username, password, err := getCredentials()
+	registry := c.GetArg("registry").String("")
+
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +45,8 @@ func CreateSdranRelease() (*helm.HelmRelease, error) {
 		Set("import.onos-config.enabled", false).
 		Set("import.onos-topo.enabled", false).
 		Set("import.ran-simulator.enabled", true).
-		Set("import.onos-pci.enabled", false)
+		Set("import.onos-pci.enabled", false).
+		Set("global.image.registry", registry)
 
 	return sdran, nil
 }
