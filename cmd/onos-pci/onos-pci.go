@@ -23,6 +23,8 @@ func main() {
 	e2subEndpoint := flag.String("e2subEndpoint", "onos-e2sub:5150", "E2Sub service endpoint")
 	ricActionID := flag.Int("ricActionID", 10, "RIC Action ID in E2 message")
 	grpcPort := flag.Int("grpcPort", 5150, "grpc Port number")
+	ctrlAckTimer := flag.Int("ctrlAckTimer", 5000,
+		"Control ACK message timer - if it is expired, PCI xAPP think that control message transmission fails")
 
 	ready := make(chan bool)
 
@@ -44,6 +46,7 @@ func main() {
 		E2SubEndpoint: *e2subEndpoint,
 		GRPCPort:      *grpcPort,
 		RicActionID:   int32(*ricActionID),
+		CtrlAcktimer:  int32(*ctrlAckTimer),
 	}
 
 	mgr := manager.NewManager(cfg)

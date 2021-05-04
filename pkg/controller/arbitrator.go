@@ -99,12 +99,14 @@ func (a *PciArbitratorCtrl) setD1NeighborPciMap(pciMetricMap map[string]*store.C
 func (a *PciArbitratorCtrl) setD2NeighborPciMap(pciMetricMap map[string]*store.CellPciNrt, globalPciMap map[string]int32) {
 	for n1 := range a.D1NeighborPciMap {
 		if _, ok := pciMetricMap[n1]; !ok {
+			logArb.Debugf("%v is not in the PciMetricMap yet", n1)
 			continue
 		} else if pciMetricMap[n1].Neighbors == nil {
+			logArb.Debugf("%v has no neighbors field", n1)
 			continue
 		}
 		for _, n2 := range pciMetricMap[n1].Neighbors {
-			if decode.CgiToString(n2.Cgi) != decode.CgiToString(a.TargetE2NodeCgi) && (!a.hasPci(n2.Cgi, globalPciMap)) {
+			if decode.CgiToString(n2.Cgi) != decode.CgiToString(a.TargetE2NodeCgi) && (!a.hasPci(n2.Cgi, a.D1NeighborPciMap)) {
 				a.D2NeighborPciMap[decode.CgiToString(n2.Cgi)] = globalPciMap[decode.CgiToString(n2.Cgi)]
 				a.NeighborPcis[n2.Metric.Pci] = true
 			}

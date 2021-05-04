@@ -5,7 +5,8 @@
 package store
 
 import (
-	e2smrcpreies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v1/e2sm-rc-pre-ies"
+	e2tapi "github.com/onosproject/onos-api/go/onos/e2t/e2"
+	e2smrcpreies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
 	"github.com/onosproject/onos-ric-sdk-go/pkg/e2/indication"
 )
 
@@ -43,11 +44,20 @@ type NeighborCell struct {
 	Metric  *CellMetric
 }
 
+// E2NodeIndication is E2 Node's indication message struct
 type E2NodeIndication struct {
 	NodeID string
 	IndMsg indication.Indication
 }
 
+// ControlAckMessages struct has two messages - ack and failure
+type ControlAckMessages struct {
+	CtrlACK     *e2tapi.ControlAcknowledge
+	CtrlFailure *e2tapi.ControlFailure
+	CtrlAckFail bool
+}
+
+// PciStat struct has statistics information
 type PciStat struct {
 	NumConflicts int32
 }
@@ -93,5 +103,13 @@ func NewNeighborCell(nrIndex int32, cgi *CGI, metric *CellMetric) *NeighborCell 
 		NrIndex: nrIndex,
 		Cgi:     cgi,
 		Metric:  metric,
+	}
+}
+
+func NewControlAckMessages(ack *e2tapi.ControlAcknowledge, failure *e2tapi.ControlFailure, flag bool) *ControlAckMessages {
+	return &ControlAckMessages{
+		CtrlACK: ack,
+		CtrlFailure: failure,
+		CtrlAckFail: flag,
 	}
 }

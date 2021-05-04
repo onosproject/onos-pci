@@ -32,6 +32,7 @@ type Config struct {
 	GRPCPort      int
 	AppConfig     *app.Config
 	RicActionID   int32
+	CtrlAcktimer  int32
 }
 
 // NewManager creates a new manager
@@ -39,6 +40,7 @@ func NewManager(config Config) *Manager {
 	log.Info("Creating Manager")
 	indCh := make(chan *store.E2NodeIndication)
 	ctrlReqChs := make(map[string]chan *e2tapi.ControlRequest)
+	ctrlAckCh := make(chan *store.ControlAckMessages)
 	pciMon := make(map[string]*store.PciStat)
 	pciMonMutex := sync.RWMutex{}
 	return &Manager{
@@ -50,9 +52,10 @@ func NewManager(config Config) *Manager {
 		Chans: Channels{
 			IndCh:      indCh,
 			CtrlReqChs: ctrlReqChs,
+			CtrlAckCh: ctrlAckCh,
 		},
 		Ctrls: Controllers{
-			PciCtrl: controller.NewPciController(indCh, ctrlReqChs, pciMon, &pciMonMutex),
+			PciCtrl: controller.NewPciController(indCh, ctrlReqChs, ctrlAckCh, pciMon, &pciMonMutex, config.CtrlAcktimer),
 		},
 		Mons: Monitors{
 			PciMonitor: pciMon,
@@ -79,6 +82,7 @@ type SBSessions struct {
 type Channels struct {
 	IndCh      chan *store.E2NodeIndication
 	CtrlReqChs map[string]chan *e2tapi.ControlRequest
+	CtrlAckCh  chan *store.ControlAckMessages
 }
 
 // Controllers is a set of controllers
@@ -121,7 +125,7 @@ func (m *Manager) Start() error {
 		log.Errorf("Failed to get report period so period is set to 0ms: %v", err)
 	}
 
-	go m.Sessions.E2Session.Run(m.Chans.IndCh, m.Chans.CtrlReqChs, m.Sessions.AdminSession)
+	go m.Sessions.E2Session.Run(m.Chans.IndCh, m.Chans.CtrlReqChs, m.Chans.CtrlAckCh, m.Sessions.AdminSession)
 	go m.Ctrls.PciCtrl.Run()
 	return nil
 }

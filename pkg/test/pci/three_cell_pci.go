@@ -21,9 +21,11 @@ func (s *TestSuite) TestThreeCellPci(t *testing.T) {
 
 	e2IndCh := make(chan *store.E2NodeIndication)
 	ctrlReqChMap := make(map[string]chan *e2tapi.ControlRequest)
+	ctrlAckChan := make(chan *store.ControlAckMessages)
+	ctrlAckTimer := int32(5000)
 	pciMonitor := make(map[string]*store.PciStat)
 	pciMonMutex := &sync.RWMutex{}
-	pciCtrl := controller.NewPciController(e2IndCh, ctrlReqChMap, pciMonitor, pciMonMutex)
+	pciCtrl := controller.NewPciController(e2IndCh, ctrlReqChMap, ctrlAckChan, pciMonitor, pciMonMutex, ctrlAckTimer)
 
 	go pciCtrl.Run()
 

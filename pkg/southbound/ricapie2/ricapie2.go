@@ -9,7 +9,7 @@ import (
 	"github.com/onosproject/onos-api/go/onos/e2sub/subscription"
 	e2tapi "github.com/onosproject/onos-api/go/onos/e2t/e2"
 	"github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/pdubuilder"
-	e2sm_rc_pre_ies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v1/e2sm-rc-pre-ies"
+	e2sm_rc_pre_ies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
 	"github.com/onosproject/onos-e2t/pkg/southbound/e2ap/types"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-pci/pkg/southbound/admin"
@@ -27,13 +27,13 @@ import (
 	"time"
 )
 
-const RCPreServiceModelOIDV1 = "1.3.6.1.4.1.53148.1.1.2.100"
+const RCPreServiceModelOIDV2 = "1.3.6.1.4.1.53148.1.2.2.100"
 
 var log = logging.GetLogger("sb-ricapie2")
 
 const (
 	ServiceModelName       = "oran-e2sm-rc-pre"
-	ServiceModelVersion    = "v1"
+	ServiceModelVersion    = "v2"
 	ReportPeriodConfigPath = "/report_period/interval"
 )
 
@@ -62,14 +62,14 @@ func NewSession(e2tEndpoint string, e2subEndpoint string, ricActionID int32, rep
 }
 
 // Run starts the southbound to watch indication messages
-func (s *E2Session) Run(indChan chan *store.E2NodeIndication, ctrlReqChans map[string]chan *e2tapi.ControlRequest, adminSession *admin.E2AdminSession) {
+func (s *E2Session) Run(indChan chan *store.E2NodeIndication, ctrlReqChans map[string]chan *e2tapi.ControlRequest, ctrlAckChan chan *store.ControlAckMessages, adminSession *admin.E2AdminSession) {
 	log.Info("Started KPIMON Southbound session")
 	s.configEventCh = make(chan event.Event)
 	go func() {
 		_ = s.watchConfigChanges()
 	}()
 	s.SubDelTrigger = make(chan bool)
-	s.manageConnections(indChan, ctrlReqChans, adminSession)
+	s.manageConnections(indChan, ctrlReqChans, ctrlAckChan, adminSession)
 }
 
 func (s *E2Session) updateReportPeriod(event event.Event) error {
@@ -124,7 +124,7 @@ func (s *E2Session) deleteSuscription() error {
 }
 
 // manageConnections handles connections between ONOS-PCI and ONOS-E2T/E2Sub.
-func (s *E2Session) manageConnections(indChan chan *store.E2NodeIndication, ctrlReqChans map[string]chan *e2tapi.ControlRequest, adminSession *admin.E2AdminSession) {
+func (s *E2Session) manageConnections(indChan chan *store.E2NodeIndication, ctrlReqChans map[string]chan *e2tapi.ControlRequest, ctrlAckChan chan *store.ControlAckMessages, adminSession *admin.E2AdminSession) {
 	for {
 		nodeIDs, err := adminSession.GetListE2NodeIDs()
 		if err != nil {
@@ -143,7 +143,7 @@ func (s *E2Session) manageConnections(indChan chan *store.E2NodeIndication, ctrl
 				log.Error(err)
 				continue
 			} else if !hasOID {
-				log.Warnf("E2Node %v does not support RC Pre Service model (OID: %v)", id, RCPreServiceModelOIDV1)
+				log.Warnf("E2Node %v does not support RC Pre Service model (OID: %v)", id, RCPreServiceModelOIDV2)
 				continue
 			}
 
@@ -157,7 +157,7 @@ func (s *E2Session) manageConnections(indChan chan *store.E2NodeIndication, ctrl
 			go func(id string, wg *sync.WaitGroup) {
 				defer wg.Done()
 				for {
-					s.manageConnection(indChan, id, ctrlReqChans[id])
+					s.manageConnection(indChan, id, ctrlReqChans[id], ctrlAckChan)
 				}
 			}(id, &wg)
 		}
@@ -174,15 +174,15 @@ func (s *E2Session) checkOID(nodeID string, session *admin.E2AdminSession) (bool
 
 	for _, ranFunction := range ranFunctions {
 		log.Debugf("ranFunction.Oid (%v): %v", ranFunction.Description, ranFunction.Oid)
-		if ranFunction.Oid == RCPreServiceModelOIDV1 {
+		if ranFunction.Oid == RCPreServiceModelOIDV2 {
 			return true, nil
 		}
 	}
 	return false, nil
 }
 
-func (s *E2Session) manageConnection(indChan chan *store.E2NodeIndication, nodeID string, ctrlReqChan chan *e2tapi.ControlRequest) {
-	err := s.subscribeE2T(indChan, nodeID, ctrlReqChan)
+func (s *E2Session) manageConnection(indChan chan *store.E2NodeIndication, nodeID string, ctrlReqChan chan *e2tapi.ControlRequest, ctrlAckChan chan *store.ControlAckMessages) {
+	err := s.subscribeE2T(indChan, nodeID, ctrlReqChan, ctrlAckChan)
 	if err != nil {
 		log.Warn("Error happens when subscription %s", err)
 	}
@@ -218,9 +218,9 @@ func (s *E2Session) createSubscriptionRequest(nodeID string) (subscription.Subsc
 func (s *E2Session) createEventTriggerData() []byte {
 	log.Infof("Received period value: %v", s.ReportPeriodMs)
 
-	//e2smRcEventTriggerDefinition, err := pdubuilder.CreateE2SmRcPreEventTriggerDefinitionPeriodic(int32(s.ReportPeriodMs))
+	e2smRcEventTriggerDefinition, err := pdubuilder.CreateE2SmRcPreEventTriggerDefinitionPeriodic(int32(s.ReportPeriodMs))
 	// use reactive way in this stage - for the future, we can choose one of two options: proactive or reactive
-	e2smRcEventTriggerDefinition, err := pdubuilder.CreateE2SmRcPreEventTriggerDefinitionUponChange()
+	//e2smRcEventTriggerDefinition, err := pdubuilder.CreateE2SmRcPreEventTriggerDefinitionUponChange()
 	if err != nil {
 		log.Errorf("Failed to create event trigger definition data: %v", err)
 		return []byte{}
@@ -240,7 +240,7 @@ func (s *E2Session) createEventTriggerData() []byte {
 	return protoBytes
 }
 
-func (s *E2Session) subscribeE2T(indChan chan *store.E2NodeIndication, nodeID string, ctrlReqChan chan *e2tapi.ControlRequest) error {
+func (s *E2Session) subscribeE2T(indChan chan *store.E2NodeIndication, nodeID string, ctrlReqChan chan *e2tapi.ControlRequest, ctrlAckChan chan *store.ControlAckMessages) error {
 	log.Infof("Connecting to ONOS-E2Sub...%s", s.E2SubEndpoint)
 
 	e2SubHost := strings.Split(s.E2SubEndpoint, ":")[0]
@@ -310,25 +310,33 @@ func (s *E2Session) subscribeE2T(indChan chan *store.E2NodeIndication, nodeID st
 			ctrlRespMsg, err := client.Control(ctx, ctrlReqMsg)
 			if err != nil {
 				log.Errorf("Failed to send control message - %v", err)
+				continue
 			} else if ctrlRespMsg == nil {
 				log.Errorf("Control response message is nil")
+				continue
 			}
 
 			ctrlAck := ctrlRespMsg.GetControlAcknowledge()
 			ctrlFailure := ctrlRespMsg.GetControlFailure()
+
+			errorFlag := false
 
 			if ctrlAck != nil {
 				ctrlOutcome := &e2sm_rc_pre_ies.E2SmRcPreControlOutcome{}
 				err = proto.Unmarshal(ctrlAck.GetControlOutcome(), ctrlOutcome)
 				if err != nil {
 					log.Errorf("Failed to get control outcome - %v", err)
+					errorFlag = true
 				}
 
 				log.Infof("Received ACK message %v", ctrlOutcome.GetControlOutcomeFormat1())
 			}
 			if ctrlFailure != nil {
 				log.Errorf("Control Failure message arrived")
+				errorFlag = true
 			}
+
+			ctrlAckChan <- store.NewControlAckMessages(ctrlAck, ctrlFailure, errorFlag)
 
 		case trigger := <-s.SubDelTrigger:
 			if trigger {
@@ -372,7 +380,17 @@ func (c *E2SmRcPreControlHandler) CreateRcControlHeader(cellID uint64, cellIDLen
 		Value: cellID,
 		Len:   cellIDLen,
 	}
-	newE2SmRcPrePdu, err := pdubuilder.CreateE2SmRcPreControlHeader(priority, plmnID, eci)
+	cgi, err := pdubuilder.CreateCellGlobalIDNrCgi(plmnID, eci)
+	log.Infof("eci: %v", eci)
+	log.Infof("cgi: %v", cgi)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	newE2SmRcPrePdu, err := pdubuilder.CreateE2SmRcPreControlHeader(priority, cgi)
+
+
+	log.Infof("newE2SmRcPrePdu: %v", newE2SmRcPrePdu)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -391,7 +409,8 @@ func (c *E2SmRcPreControlHandler) CreateRcControlHeader(cellID uint64, cellIDLen
 }
 
 func (c *E2SmRcPreControlHandler) CreateRcControlMessage(ranParamID int32, ranParamName string, ranParamValue int32) ([]byte, error) {
-	newE2SmRcPrePdu, err := pdubuilder.CreateE2SmRcPreControlMessage(ranParamID, ranParamName, ranParamValue)
+	ranParamValueInt := pdubuilder.CreateRanParameterValueInt(ranParamValue)
+	newE2SmRcPrePdu, err := pdubuilder.CreateE2SmRcPreControlMessage(ranParamID, ranParamName, ranParamValueInt)
 	if err != nil {
 		return []byte{}, err
 	}

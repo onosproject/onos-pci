@@ -15,13 +15,17 @@ import (
 func TestNewPciController(t *testing.T) {
 	sampleIndChan := make(chan *store.E2NodeIndication)
 	sampleCtrlReqChans := make(map[string]chan *e2tapi.ControlRequest)
+	sampleCtrlAckChan := make(chan *store.ControlAckMessages)
+	sampleAckTimer := int32(5000)
 	samplePciController := PciCtrl{
 		IndChan: sampleIndChan,
 		CtrlReqChans: sampleCtrlReqChans,
+		CtrlAckChan: sampleCtrlAckChan,
 		PciMetricMap: make(map[string]*store.CellPciNrt),
 		GlobalPciMap: make(map[string]int32),
+		CtrlAckTimer: sampleAckTimer,
 	}
-	targetPciController := NewPciController(sampleIndChan, sampleCtrlReqChans, nil, nil)
+	targetPciController := NewPciController(sampleIndChan, sampleCtrlReqChans, sampleCtrlAckChan, nil, nil, sampleAckTimer)
 	fmt.Printf("samplePciController: %v\n", &samplePciController)
 	fmt.Printf("targetPciController: %v\n", targetPciController)
 
