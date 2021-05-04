@@ -380,15 +380,15 @@ func (c *E2SmRcPreControlHandler) CreateRcControlHeader(cellID uint64, cellIDLen
 		Len:   cellIDLen,
 	}
 	cgi, err := pdubuilder.CreateCellGlobalIDNrCgi(plmnID, eci)
-	log.Infof("eci: %v", eci)
-	log.Infof("cgi: %v", cgi)
+	log.Debugf("eci: %v", eci)
+	log.Debugf("cgi: %v", cgi)
 	if err != nil {
 		return []byte{}, err
 	}
 
 	newE2SmRcPrePdu, err := pdubuilder.CreateE2SmRcPreControlHeader(priority, cgi)
 
-	log.Infof("newE2SmRcPrePdu: %v", newE2SmRcPrePdu)
+	log.Debugf("newE2SmRcPrePdu: %v", newE2SmRcPrePdu)
 	if err != nil {
 		return []byte{}, err
 	}
