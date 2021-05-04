@@ -45,7 +45,7 @@ func (a *PciArbitratorCtrl) ArbitratePCI(pciMetricMap map[string]*store.CellPciN
 	logArb.Debugf("D2 Neighbor PCIs: %v", a.D2NeighborPciMap)
 
 	if a.verifyPci() {
-		logArb.Infof("PCI of E2Node %v is assigned to %d", decode.CgiToString(a.TargetE2NodeCgi), a.TargetE2NodeMetric.Metric.Pci)
+		logArb.Debugf("PCI of E2Node %v is assigned to %d (no change", decode.CgiToString(a.TargetE2NodeCgi), a.TargetE2NodeMetric.Metric.Pci)
 		return false, nil
 	}
 
