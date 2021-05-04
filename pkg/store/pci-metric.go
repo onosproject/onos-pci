@@ -108,7 +108,7 @@ func NewNeighborCell(nrIndex int32, cgi *CGI, metric *CellMetric) *NeighborCell 
 
 func NewControlAckMessages(ack *e2tapi.ControlAcknowledge, failure *e2tapi.ControlFailure, flag bool) *ControlAckMessages {
 	return &ControlAckMessages{
-		CtrlACK: ack,
+		CtrlACK:     ack,
 		CtrlFailure: failure,
 		CtrlAckFail: flag,
 	}

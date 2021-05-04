@@ -389,7 +389,6 @@ func (c *E2SmRcPreControlHandler) CreateRcControlHeader(cellID uint64, cellIDLen
 
 	newE2SmRcPrePdu, err := pdubuilder.CreateE2SmRcPreControlHeader(priority, cgi)
 
-
 	log.Infof("newE2SmRcPrePdu: %v", newE2SmRcPrePdu)
 	if err != nil {
 		return []byte{}, err

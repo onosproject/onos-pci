@@ -52,7 +52,7 @@ func NewManager(config Config) *Manager {
 		Chans: Channels{
 			IndCh:      indCh,
 			CtrlReqChs: ctrlReqChs,
-			CtrlAckCh: ctrlAckCh,
+			CtrlAckCh:  ctrlAckCh,
 		},
 		Ctrls: Controllers{
 			PciCtrl: controller.NewPciController(indCh, ctrlReqChs, ctrlAckCh, pciMon, &pciMonMutex, config.CtrlAcktimer),

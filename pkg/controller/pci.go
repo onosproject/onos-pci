@@ -20,9 +20,9 @@ import (
 var logPci = logging.GetLogger("controller", "pci")
 
 const (
-	LowerPCI   = 1
-	UpperPCI   = 512
-	CellIDLength		   = 36
+	LowerPCI     = 1
+	UpperPCI     = 512
+	CellIDLength = 36
 )
 
 // PciCtrl is the controller for the KPI monitoring
@@ -59,7 +59,7 @@ func (c *PciCtrl) Run() {
 	c.listenIndChan()
 }
 
-func (c *PciCtrl) getDlArfcn(message *e2smrcpreies.E2SmRcPreIndicationMessageFormat1) (int32, error){
+func (c *PciCtrl) getDlArfcn(message *e2smrcpreies.E2SmRcPreIndicationMessageFormat1) (int32, error) {
 	if message.GetDlArfcn().GetEArfcn() != nil {
 		return message.GetDlArfcn().GetEArfcn().GetValue(), nil
 	} else if message.GetDlArfcn().GetNrArfcn() != nil {
@@ -208,12 +208,12 @@ func (c *PciCtrl) listenIndChan() {
 
 func (c *PciCtrl) waitAck() error {
 	select {
-	case ctrlAck := <- c.CtrlAckChan:
+	case ctrlAck := <-c.CtrlAckChan:
 		if ctrlAck.CtrlAckFail {
 			return fmt.Errorf("Control ACK failed or failure message arrived - ctrlAck:%v; ctrlFailure:%v", ctrlAck.CtrlACK, ctrlAck.CtrlFailure)
 		}
 		return nil
-	case <- time.After(time.Duration(c.CtrlAckTimer) * time.Millisecond):
+	case <-time.After(time.Duration(c.CtrlAckTimer) * time.Millisecond):
 		return fmt.Errorf("CtrlAckTimer expired - Control ACK did not arrive in time")
 	}
 }
