@@ -259,6 +259,8 @@ github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1m
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/envoyproxy/protoc-gen-validate v0.4.1 h1:7dLaJvASGRD7X49jSCSXXHwKPm0ZN9r9kJD+p+vS7dM=
 github.com/envoyproxy/protoc-gen-validate v0.4.1/go.mod h1:E+IEazqdaWv3FrnGtZIu3b9fPFMK8AzeTTrk9SfVwWs=
+github.com/envoyproxy/protoc-gen-validate v0.6.1 h1:4CF52PCseTFt4bE+Yk3dIpdVi7XWuPVMhPtm4FaIJPM=
+github.com/envoyproxy/protoc-gen-validate v0.6.1/go.mod h1:txg5va2Qkip90uYoSKH+nkAAmXrb2j3iq4FLwdrCbXQ=
 github.com/ericchiang/oidc v0.0.0-20160908143337-11f62933e071 h1:UgWifGhDYRJlbZt2KaCfcqBRuMU1XQz39ViOcGGwyfE=
 github.com/ericchiang/oidc v0.0.0-20160908143337-11f62933e071/go.mod h1:+JxDIxo/ZDbRvofOW5i1Wb9RSEVuqLBzVy3ysulX2w4=
 github.com/evanphx/json-patch v4.2.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
@@ -374,6 +376,8 @@ github.com/golang/protobuf v1.4.3 h1:JjCZWpVbqXDqFVmTfYWEVTMIYrL/NPdPSCHPJ0T/raM
 github.com/golang/protobuf v1.4.3/go.mod h1:oDoupMAO8OvCJWAcko0GGGIgR6R6ocIYbsSw735rRwI=
 github.com/golang/protobuf v1.5.0 h1:LUVKkCeviFUMKqHa4tXIIij/lbhnMbP7Fn5wKdKkRh4=
 github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=
+github.com/golang/protobuf v1.5.2 h1:ROPKBNFfQgOUMifHyP+KYbvpjbdoFNs+aK7DXlji0Tw=
+github.com/golang/protobuf v1.5.2/go.mod h1:XVQd3VNwM+JqD3oG2Ue2ip4fOMUkwXdXDdiuN0vRsmY=
 github.com/golang/snappy v0.0.1 h1:Qgr9rKW7uDUkrbSmQeiDsGa8SjGyCOGtuasMWwvp2P4=
 github.com/golang/snappy v0.0.1/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
 github.com/golang/snappy v0.0.2 h1:aeE13tS0IiQgFjYdoL8qN3K1N2bXXtI6Vi51/y7BpMw=
@@ -588,12 +592,14 @@ github.com/onosproject/helmit v0.6.12/go.mod h1:1YWAcvSyg1USHaMHBuRizvZPcOsZ/z9v
 github.com/onosproject/onos-api/go v0.7.20/go.mod h1:xTlcjPQDGRUMiXtgWDGj9SA6+5pC9qY8B5A1ta9CoZc=
 github.com/onosproject/onos-api/go v0.7.21 h1:4iWieLI4AWjp/ml96gT2K4YlFVEIl79pM/8QY9vB6WI=
 github.com/onosproject/onos-api/go v0.7.21/go.mod h1:xTlcjPQDGRUMiXtgWDGj9SA6+5pC9qY8B5A1ta9CoZc=
-github.com/onosproject/onos-api/go v0.7.23 h1:wadQpfPNUxhstGym2rOyVoUN4QRBOxjLwxLCCwb67LI=
-github.com/onosproject/onos-api/go v0.7.23/go.mod h1:xTlcjPQDGRUMiXtgWDGj9SA6+5pC9qY8B5A1ta9CoZc=
+github.com/onosproject/onos-api/go v0.7.25 h1:w5Eu+eqhNsOtQ58wxy5/yn7oAUsD5jPmXAKwOJ3nBLE=
+github.com/onosproject/onos-api/go v0.7.25/go.mod h1:xTlcjPQDGRUMiXtgWDGj9SA6+5pC9qY8B5A1ta9CoZc=
 github.com/onosproject/onos-e2-sm/servicemodels/e2sm_kpm v0.7.19/go.mod h1:NFhsUMr4ul+YXCqrGNYNXIZUvdujLc+k19VFxVyvBCE=
 github.com/onosproject/onos-e2-sm/servicemodels/e2sm_kpm_v2 v0.7.19/go.mod h1:BC7zKq0Q5k5FXXzj96vIYsNJnnwSHfZf9T+JPeUu1Fo=
 github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre v0.7.19 h1:4TmPtRxG317E1g3WTVu/pb6J9GJlzI65UkK7S1aVYXc=
 github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre v0.7.19/go.mod h1:wWD8vJT9KMaj/Kt8lF2Kqjoco6nBMt4wtGr8ixtB3Kw=
+github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre v0.7.21 h1:37sPLbMe1HvdtnaYV9v12hl9hZdeuXP7cBk2KEh954A=
+github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre v0.7.21/go.mod h1:wWD8vJT9KMaj/Kt8lF2Kqjoco6nBMt4wtGr8ixtB3Kw=
 github.com/onosproject/onos-e2sub v0.7.3/go.mod h1:niJDKWo7jmdPWYWLIavCpXrcW8TGCHrbUGa1tJXMotc=
 github.com/onosproject/onos-e2t v0.7.13 h1:5keC7ZbLWAs2r0x9uEGOeMXK0T559buLHVccb/XF8TY=
 github.com/onosproject/onos-e2t v0.7.13/go.mod h1:XgNqFgskR9dI53lSDdseYQLlkU84ALIMUo7ds6fi/M0=

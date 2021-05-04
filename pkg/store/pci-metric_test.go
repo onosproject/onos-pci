@@ -6,7 +6,7 @@ package store
 
 import (
 	"fmt"
-	e2smrcpreies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v1/e2sm-rc-pre-ies"
+	e2smrcpreies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
 	"testing"
 	"github.com/stretchr/testify/assert"
 )

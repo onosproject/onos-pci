@@ -12,7 +12,7 @@ const (
 	SubscriptionServiceHost = "onos-e2sub"
 	SubscriptionServicePort = 5150
 	RcServiceModelName      = "oran-e2sm-rc-pre"
-	RcServiceModelVersion   = "v1"
+	RcServiceModelVersion   = "v2"
 	RansimServicePort       = 5150
 )
 
