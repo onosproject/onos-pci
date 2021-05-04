@@ -205,7 +205,7 @@ func (s *E2Session) createSubscriptionRequest(nodeID string) (subscription.Subsc
 		Actions: []subscription.Action{
 			{
 				ID:   int32(s.RicActionID),
-				Type: subscription.ActionType_ACTION_TYPE_REPORT,
+				Type: subscripon.ActionType_ACTION_TYPE_REPORT,
 				SubsequentAction: &subscription.SubsequentAction{
 					Type:       subscription.SubsequentActionType_SUBSEQUENT_ACTION_TYPE_CONTINUE,
 					TimeToWait: subscription.TimeToWait_TIME_TO_WAIT_ZERO,
