@@ -219,8 +219,7 @@ func (s *E2Session) createEventTriggerData() []byte {
 	log.Infof("Received period value: %v", s.ReportPeriodMs)
 
 	e2smRcEventTriggerDefinition, err := pdubuilder.CreateE2SmRcPreEventTriggerDefinitionPeriodic(int32(s.ReportPeriodMs))
-	// use reactive way in this stage - for the future, we can choose one of two options: proactive or reactive
-	//e2smRcEventTriggerDefinition, err := pdubuilder.CreateE2SmRcPreEventTriggerDefinitionUponChange()
+	//e2smRcEventTriggerDefinition, err := pdubuilder.CreateE2SmRcPreEventTriggerDefinitionUponChange() - under test: not periodic but upon changed
 	if err != nil {
 		log.Errorf("Failed to create event trigger definition data: %v", err)
 		return []byte{}
