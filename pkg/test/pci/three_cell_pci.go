@@ -5,82 +5,104 @@
 package pci
 
 import (
-	e2tapi "github.com/onosproject/onos-api/go/onos/e2t/e2"
-	"github.com/onosproject/onos-pci/pkg/controller"
+	"fmt"
+	"github.com/onosproject/onos-lib-go/pkg/certs"
+	"github.com/onosproject/onos-pci/pkg/manager"
 	"github.com/onosproject/onos-pci/pkg/store"
-	"github.com/onosproject/onos-pci/pkg/test/utils"
-	"github.com/onosproject/onos-ric-sdk-go/pkg/e2/indication"
 	"github.com/stretchr/testify/assert"
-	"sync"
+	"log"
+	"os"
 	"testing"
 	"time"
 )
 
 func (s *TestSuite) TestThreeCellPci(t *testing.T) {
-	indCh := make(chan indication.Indication)
 
-	e2IndCh := make(chan *store.E2NodeIndication)
-	ctrlReqChMap := make(map[string]chan *e2tapi.ControlRequest)
-	ctrlAckChan := make(chan *store.ControlAckMessages)
-	ctrlAckTimer := int32(5000)
-	pciMonitor := make(map[string]*store.PciStat)
-	pciMonMutex := &sync.RWMutex{}
-	pciCtrl := controller.NewPciController(e2IndCh, ctrlReqChMap, ctrlAckChan, pciMonitor, pciMonMutex, ctrlAckTimer)
+	e2tEndpoint := "onos-e2t:5150"
+	e2subEndpoint := "onos-e2sub:5150"
 
-	go pciCtrl.Run()
-
-	sub, err := utils.CreatePciSubscriptionSingle(indCh, ctrlReqChMap)
-	assert.NoError(t, err)
-
-	var nodeIDs []string
-	for k := range ctrlReqChMap {
-		nodeIDs = append(nodeIDs, k)
+	cfg := manager.Config{
+		CAPath:        "onos-pci/files/certs/tls.cacrt",
+		KeyPath:       "onos-pci/files/certs/tls.key",
+		CertPath:      "onos-pci/files/certs/tls.crt",
+		ConfigPath:    "onos-pci/files/configs/config.json",
+		E2tEndpoint:   e2tEndpoint,
+		E2SubEndpoint: e2subEndpoint,
+		GRPCPort:      5150,
+		RicActionID:   int32(10),
+		CtrlAcktimer:  5000,
 	}
 
-	assert.Equal(t, 1, len(nodeIDs))
+	_, err := certs.HandleCertPaths(cfg.CAPath, cfg.KeyPath, cfg.CertPath, true)
+	assert.NoError(t, err)
 
-	numIndMsg := 0
+	time.Sleep(10 * time.Second)
+	resultCh := make(chan map[string]*store.PciStat)
+	timer := make(chan bool)
+	mgr := manager.NewManager(cfg)
+	mgr.Run()
 
-	// Indication message block
 	go func() {
 		for {
-			t.Logf("Num received indication messages: %d\n", numIndMsg)
-			if numIndMsg >= 3 {
-				t.Log("Received three indication messages - Succeed so far")
-				break
-			}
-			select {
-			case indMsg := <- indCh:
-				e2IndCh <- &store.E2NodeIndication{
-					NodeID: nodeIDs[0],
-					IndMsg: indMsg,
-				}
-				numIndMsg++
-			case <- time.After(60 * time.Second):
-				t.Error("Indication message did not arrive before timer was expired")
-			}
+			time.Sleep(1 * time.Second)
+			resultCh <- mgr.Mons.PciMonitor
 		}
 	}()
 
-	numCtrlMsg := 0
+	// timer
+	go func() {
+		time.Sleep(60 * time.Second)
+		timer <- true
+	}()
 
-	// Control message block
 	for {
-		t.Logf("Num sent control messages: %d\n", numCtrlMsg)
-		if numCtrlMsg >= 2 {
-			t.Log("Received three control messages - Succeed so far")
+		numConflicts := int32(0)
+		select {
+		case <-timer:
+			mgr.Mons.PciMonitorMutex.RLock()
+			if mgr.Mons.PciMonitor["343332707639554"].NumConflicts >= 1 {
+				numConflicts = mgr.Mons.PciMonitor["343332707639554"].NumConflicts
+				mgr.Mons.PciMonitorMutex.RUnlock()
+				break
+			}
+			if mgr.Mons.PciMonitor["343332707639555"].NumConflicts >= 1 {
+				numConflicts = mgr.Mons.PciMonitor["343332707639555"].NumConflicts
+				mgr.Mons.PciMonitorMutex.RUnlock()
+				break
+			}
+			mgr.Mons.PciMonitorMutex.RUnlock()
+			assert.NoError(t, fmt.Errorf("Timer experied"))
+			os.Exit(1)
+
+		case st := <-resultCh:
+			mgr.Mons.PciMonitorMutex.RLock()
+			if _, ok := st["343332707639554"]; !ok {
+				continue
+			}
+			if _, ok := st["343332707639555"]; !ok {
+				continue
+			}
+			if st["343332707639554"] == nil || st["343332707639555"] == nil {
+				continue
+			}
+
+			log.Printf("num conflicts for %s is %d", "343332707639554", st["343332707639554"].NumConflicts)
+			if st["343332707639554"].NumConflicts >= 1 {
+				numConflicts = st["343332707639554"].NumConflicts
+				mgr.Mons.PciMonitorMutex.RUnlock()
+				break
+			}
+			log.Printf("num conflicts for %s is %d", "343332707639555", st["343332707639555"].NumConflicts)
+			if st["343332707639555"].NumConflicts >= 1 {
+				numConflicts = st["343332707639555"].NumConflicts
+				mgr.Mons.PciMonitorMutex.RUnlock()
+				break
+			}
+
+			mgr.Mons.PciMonitorMutex.RUnlock()
+		}
+		if numConflicts >= 1 {
 			break
 		}
-		select {
-		case ctrlMsg := <- ctrlReqChMap[nodeIDs[0]]:
-			t.Logf("Received control message: %v", ctrlMsg)
-			numCtrlMsg++
-		case <- time.After(60 * time.Second):
-			t.Fatal("Control message did not arrive before timer was expired")
-		}
 	}
-
-	err = sub.Close()
-	assert.NoError(t, err)
-
 }

@@ -11,9 +11,9 @@ import (
 	"github.com/onosproject/onos-pci/pkg/store"
 	"github.com/stretchr/testify/assert"
 	"log"
+	"os"
 	"testing"
 	"time"
-	"os"
 )
 
 func (s *TestSuite) TestScalePci(t *testing.T) {
@@ -30,6 +30,7 @@ func (s *TestSuite) TestScalePci(t *testing.T) {
 		E2SubEndpoint: e2subEndpoint,
 		GRPCPort:      5150,
 		RicActionID:   int32(10),
+		CtrlAcktimer:  5000,
 	}
 
 	_, err := certs.HandleCertPaths(cfg.CAPath, cfg.KeyPath, cfg.CertPath, true)
@@ -54,11 +55,10 @@ func (s *TestSuite) TestScalePci(t *testing.T) {
 		timer <- true
 	}()
 
-
 	for {
 		numConflicts := int32(0)
 		select {
-		case <- timer:
+		case <-timer:
 			mgr.Mons.PciMonitorMutex.RLock()
 			if mgr.Mons.PciMonitor["343332707642115"].NumConflicts >= 1 {
 				numConflicts = mgr.Mons.PciMonitor["343332707642115"].NumConflicts
@@ -74,7 +74,7 @@ func (s *TestSuite) TestScalePci(t *testing.T) {
 			assert.NoError(t, fmt.Errorf("Timer experied"))
 			os.Exit(1)
 
-		case st := <- resultCh:
+		case st := <-resultCh:
 			mgr.Mons.PciMonitorMutex.RLock()
 			if _, ok := st["343332707642115"]; !ok {
 				continue
