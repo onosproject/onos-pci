@@ -9,6 +9,7 @@ import (
 	"github.com/onosproject/onos-lib-go/pkg/certs"
 	"github.com/onosproject/onos-pci/pkg/manager"
 	"github.com/onosproject/onos-pci/pkg/store"
+	"github.com/onosproject/onos-pci/pkg/test/utils"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"os"
@@ -22,10 +23,10 @@ func (s *TestSuite) TestScalePci(t *testing.T) {
 	e2subEndpoint := "onos-e2sub:5150"
 
 	cfg := manager.Config{
-		CAPath:        "onos-pci/files/certs/tls.cacrt",
-		KeyPath:       "onos-pci/files/certs/tls.key",
-		CertPath:      "onos-pci/files/certs/tls.crt",
-		ConfigPath:    "onos-pci/files/configs/config.json",
+		CAPath:        "/tmp/tls.cacrt",
+		KeyPath:       "/tmp/tls.key",
+		CertPath:      "/tmp/tls.crt",
+		ConfigPath:    "/tmp/config.json",
 		E2tEndpoint:   e2tEndpoint,
 		E2SubEndpoint: e2subEndpoint,
 		GRPCPort:      5150,
@@ -51,7 +52,7 @@ func (s *TestSuite) TestScalePci(t *testing.T) {
 
 	// timer
 	go func() {
-		time.Sleep(60 * time.Second)
+		time.Sleep(utils.TestTimeout)
 		timer <- true
 	}()
 
