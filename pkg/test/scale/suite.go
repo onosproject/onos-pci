@@ -19,6 +19,25 @@ type TestSuite struct {
 
 // SetupTestSuite sets up the onos-pci test suite
 func (s *TestSuite) SetupTestSuite(c *input.Context) error {
+
+	// write files
+	err := utils.WriteFile("/tmp/tls.cacrt", utils.TlsCacrt)
+	if err != nil {
+		return err
+	}
+	err = utils.WriteFile("/tmp/tls.crt", utils.TlsCrt)
+	if err != nil {
+		return err
+	}
+	err = utils.WriteFile("/tmp/tls.key", utils.TlsKey)
+	if err != nil {
+		return err
+	}
+	err = utils.WriteFile("/tmp/config.json", utils.ConfigJson)
+	if err != nil {
+		return err
+	}
+
 	sdran, err := utils.CreateSdranRelease(c)
 	s.sdran = sdran
 	if err != nil {
