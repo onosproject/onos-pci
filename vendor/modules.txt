@@ -180,12 +180,14 @@ github.com/gobwas/glob/syntax/ast
 github.com/gobwas/glob/syntax/lexer
 github.com/gobwas/glob/util/runes
 github.com/gobwas/glob/util/strings
-# github.com/gogo/protobuf v1.3.1
+# github.com/gogo/protobuf v1.3.2
+## explicit
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/protoc-gen-gogo/descriptor
 github.com/gogo/protobuf/sortkeys
-# github.com/golang/mock v1.4.4
+# github.com/golang/mock v1.5.0
+## explicit
 github.com/golang/mock/gomock
 # github.com/golang/protobuf v1.5.2
 github.com/golang/protobuf/proto
@@ -321,7 +323,7 @@ github.com/onosproject/helmit/pkg/test
 github.com/onosproject/helmit/pkg/util/files
 github.com/onosproject/helmit/pkg/util/logging
 github.com/onosproject/helmit/pkg/util/random
-# github.com/onosproject/onos-api/go v0.7.25
+# github.com/onosproject/onos-api/go v0.7.39
 ## explicit
 github.com/onosproject/onos-api/go/onos/e2sub/endpoint
 github.com/onosproject/onos-api/go/onos/e2sub/subscription
@@ -330,11 +332,11 @@ github.com/onosproject/onos-api/go/onos/e2t/admin
 github.com/onosproject/onos-api/go/onos/e2t/e2
 github.com/onosproject/onos-api/go/onos/pci
 github.com/onosproject/onos-api/go/onos/ransim/types
-# github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre v0.7.21
+# github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre v0.7.26
 ## explicit
 github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/pdubuilder
 github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2
-# github.com/onosproject/onos-e2t v0.7.13
+# github.com/onosproject/onos-e2t v0.7.17
 ## explicit
 github.com/onosproject/onos-e2t/api/e2ap/v1beta1
 github.com/onosproject/onos-e2t/api/e2ap/v1beta1/e2ap-commondatatypes
@@ -478,12 +480,13 @@ golang.org/x/crypto/openpgp/s2k
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/lint v0.0.0-20200302205851-738671d3881b
+# golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
 golang.org/x/lint
 golang.org/x/lint/golint
 # golang.org/x/mod v0.3.0
 golang.org/x/mod/semver
-# golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
+# golang.org/x/net v0.0.0-20210510120150-4163338589ed
+## explicit
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/http/httpguts
@@ -500,11 +503,13 @@ golang.org/x/oauth2/internal
 # golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.0.0-20210317225723-c4fcb01b228e
+# golang.org/x/sys v0.0.0-20210514084401-e8d321eab015
+## explicit
+golang.org/x/sys/execabs
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.3.4
+# golang.org/x/text v0.3.6
 golang.org/x/text/encoding
 golang.org/x/text/encoding/internal
 golang.org/x/text/encoding/internal/identifier
@@ -518,7 +523,7 @@ golang.org/x/text/unicode/norm
 golang.org/x/text/width
 # golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 golang.org/x/time/rate
-# golang.org/x/tools v0.0.0-20201116002733-ac45abd4c88c
+# golang.org/x/tools v0.1.0
 golang.org/x/tools/go/analysis
 golang.org/x/tools/go/analysis/passes/inspect
 golang.org/x/tools/go/ast/astutil
@@ -550,9 +555,10 @@ google.golang.org/appengine/internal/log
 google.golang.org/appengine/internal/remote_api
 google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/urlfetch
-# google.golang.org/genproto v0.0.0-20201113130914-ce600e9a6f9e
+# google.golang.org/genproto v0.0.0-20210513213006-bf773b8c8384
+## explicit
 google.golang.org/genproto/googleapis/rpc/status
-# google.golang.org/grpc v1.33.2
+# google.golang.org/grpc v1.37.1
 ## explicit
 google.golang.org/grpc
 google.golang.org/grpc/attributes
@@ -580,12 +586,16 @@ google.golang.org/grpc/internal/grpclog
 google.golang.org/grpc/internal/grpcrand
 google.golang.org/grpc/internal/grpcsync
 google.golang.org/grpc/internal/grpcutil
+google.golang.org/grpc/internal/metadata
+google.golang.org/grpc/internal/resolver
 google.golang.org/grpc/internal/resolver/dns
 google.golang.org/grpc/internal/resolver/passthrough
+google.golang.org/grpc/internal/resolver/unix
 google.golang.org/grpc/internal/serviceconfig
 google.golang.org/grpc/internal/status
 google.golang.org/grpc/internal/syscall
 google.golang.org/grpc/internal/transport
+google.golang.org/grpc/internal/transport/networktype
 google.golang.org/grpc/keepalive
 google.golang.org/grpc/metadata
 google.golang.org/grpc/peer

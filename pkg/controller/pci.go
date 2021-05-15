@@ -69,15 +69,38 @@ func (c *PciCtrl) getDlArfcn(message *e2smrcpreies.E2SmRcPreIndicationMessageFor
 	return 0, fmt.Errorf("DlArfcn is empty")
 }
 
+// getECGI returns PLMNID, ECID, ECID Length
+func (c *PciCtrl) getStoreCgiElems(cgi *e2smrcpreies.CellGlobalId) ([]byte, uint64, uint32, error) {
+	var plmnID []byte
+	var ecid uint64
+	var ecidLen uint32
+
+	if cgi.GetEUtraCgi() != nil {
+		plmnID = cgi.GetEUtraCgi().GetPLmnIdentity().GetValue() //decode.PlmnIdToUint32()
+		ecid = cgi.GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue()
+		ecidLen = cgi.GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen()
+	} else if cgi.GetNrCgi() != nil {
+		plmnID = cgi.GetNrCgi().GetPLmnIdentity().GetValue()
+		ecid = cgi.GetNrCgi().GetNRcellIdentity().GetValue().GetValue()
+		ecidLen = cgi.GetNrCgi().GetNRcellIdentity().GetValue().GetLen()
+	} else {
+		return []byte{}, 0, 0, fmt.Errorf("header does not have either EutraCgi or NrCgi")
+	}
+
+	return plmnID, ecid, ecidLen, nil
+}
+
 func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderFormat1, message *e2smrcpreies.E2SmRcPreIndicationMessageFormat1, e2NodeID string) {
 	logPci.Debugf("Header: %v", header)
-	logPci.Debugf("PLMN ID: %d", decode.PlmnIdToUint32(header.GetCgi().GetEUtraCgi().GetPLmnIdentity().GetValue()))
-	logPci.Debugf("ECID: %d", header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue())
-	logPci.Debugf("ECID Length: %d", header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen())
-
-	cgi := store.NewCGI(decode.PlmnIdToUint32(header.GetCgi().GetEUtraCgi().GetPLmnIdentity().GetValue()),
-		header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue(),
-		header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen())
+	plmnID, ecid, ecidLen, err := c.getStoreCgiElems(header.GetCgi())
+	cgi := store.NewCGI(decode.PlmnIdToUint32(plmnID), ecid, ecidLen)
+	if err != nil {
+		logPci.Errorf("Cannot parse CGI in header: %v", err)
+		return
+	}
+	logPci.Debugf("PLMN ID: %d", decode.PlmnIdToUint32(plmnID))
+	logPci.Debugf("ECID: %d", ecid)
+	logPci.Debugf("ECID Length: %d", ecidLen)
 
 	arfcn, err := c.getDlArfcn(message)
 	if err != nil {
@@ -99,9 +122,11 @@ func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderF
 
 	var neighbors []*store.NeighborCell
 	for i := 0; i < len(message.GetNeighbors()); i++ {
-		neighborCgi := store.NewCGI(decode.PlmnIdToUint32(message.GetNeighbors()[i].GetCgi().GetEUtraCgi().GetPLmnIdentity().GetValue()),
-			message.GetNeighbors()[i].GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue(),
-			message.GetNeighbors()[i].GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen())
+		nPlmnID, nEcid, nEcidLen, err := c.getStoreCgiElems(message.GetNeighbors()[i].GetCgi())
+		if err != nil {
+			logPci.Errorf("Cannot parse CGI in neighbor message field: %v", err)
+		}
+		neighborCgi := store.NewCGI(decode.PlmnIdToUint32(nPlmnID), nEcid, nEcidLen)
 
 		neighborMetric := store.NewCellMetric(arfcn, message.GetNeighbors()[i].GetCellSize(), message.GetNeighbors()[i].GetPci().GetValue())
 		neighbor := store.NewNeighborCell(int32(i), neighborCgi, neighborMetric)
@@ -140,11 +165,11 @@ func (c *PciCtrl) storePciMetric(header *e2smrcpreies.E2SmRcPreIndicationHeaderF
 			ServiceModelVersion: ricapie2.ServiceModelVersion,
 			ControlAckRequest:   e2tapi.ControlAckRequest_ACK,
 		}
-		cellID := header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue()
+		//cellID := cgi.Ecid
 		//cellIdLen := header.GetCgi().GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen()
+		//plmnID := header.GetCgi().GetEUtraCgi().GetPLmnIdentity().GetValue()
 		controlPriority := int32(10) //hard-coded at this moment; should be replaced with the other value
-		plmnID := header.GetCgi().GetEUtraCgi().GetPLmnIdentity().GetValue()
-		e2smRcPreControlHandler.ControlHeader, err = e2smRcPreControlHandler.CreateRcControlHeader(cellID, CellIDLength, controlPriority, plmnID)
+		e2smRcPreControlHandler.ControlHeader, err = e2smRcPreControlHandler.CreateRcControlHeader(ecid, ecidLen, controlPriority, plmnID)
 		if err != nil {
 			logPci.Errorf("Error when generating control header - %v", err)
 		}
