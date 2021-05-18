@@ -78,11 +78,11 @@ func (c *PciCtrl) getStoreCgiElems(cgi *e2smrcpreies.CellGlobalId) ([]byte, uint
 	if cgi.GetEUtraCgi() != nil {
 		plmnID = cgi.GetEUtraCgi().GetPLmnIdentity().GetValue() //decode.PlmnIdToUint32()
 		ecid = cgi.GetEUtraCgi().GetEUtracellIdentity().GetValue().GetValue()
-		ecidLen = cgi.GetEUtraCgi().GetEUtracellIdentity().GetValue().GetLen()
+		ecidLen = CellIDLength
 	} else if cgi.GetNrCgi() != nil {
 		plmnID = cgi.GetNrCgi().GetPLmnIdentity().GetValue()
 		ecid = cgi.GetNrCgi().GetNRcellIdentity().GetValue().GetValue()
-		ecidLen = cgi.GetNrCgi().GetNRcellIdentity().GetValue().GetLen()
+		ecidLen = CellIDLength
 	} else {
 		return []byte{}, 0, 0, fmt.Errorf("header does not have either EutraCgi or NrCgi")
 	}
