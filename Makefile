@@ -62,8 +62,10 @@ protos:
 
 onos-pci-docker: # @HELP build onos-pci Docker image
 onos-pci-docker:
+	@go mod vendor
 	docker build . -f build/onos-pci/Dockerfile \
 		-t onosproject/onos-pci:${ONOS_PCI_VERSION}
+	@rm -rf vendor
 
 images: # @HELP build all Docker images
 images: build onos-pci-docker
