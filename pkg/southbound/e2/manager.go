@@ -1,0 +1,349 @@
+// SPDX-FileCopyrightText: 2020-present Open Networking Foundation <info@opennetworking.org>
+//
+// SPDX-License-Identifier: LicenseRef-ONF-Member-1.0
+
+package e2
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/onosproject/onos-pci/pkg/utils/control"
+
+	"github.com/onosproject/onos-pci/pkg/store/metrics"
+
+	prototypes "github.com/gogo/protobuf/types"
+	"github.com/onosproject/onos-lib-go/pkg/errors"
+
+	"github.com/onosproject/onos-pci/pkg/monitoring"
+
+	"github.com/cenkalti/backoff/v4"
+	e2api "github.com/onosproject/onos-api/go/onos/e2t/e2/v1beta1"
+
+	"github.com/onosproject/onos-pci/pkg/utils"
+
+	storeevent "github.com/onosproject/onos-pci/pkg/store/event"
+	"github.com/onosproject/onos-ric-sdk-go/pkg/config/event"
+
+	"github.com/onosproject/onos-pci/pkg/broker"
+
+	appConfig "github.com/onosproject/onos-pci/pkg/config"
+
+	subutils "github.com/onosproject/onos-pci/pkg/utils/subscription"
+
+	topoapi "github.com/onosproject/onos-api/go/onos/topo"
+	"github.com/onosproject/onos-lib-go/pkg/logging"
+	"github.com/onosproject/onos-pci/pkg/rnib"
+	e2client "github.com/onosproject/onos-ric-sdk-go/pkg/e2/v1beta1"
+)
+
+var log = logging.GetLogger("e2", "subscription", "manager")
+
+const (
+	oid = "1.3.6.1.4.1.53148.1.2.2.100"
+)
+
+const (
+	backoffInterval = 10 * time.Millisecond
+	maxBackoffTime  = 5 * time.Second
+)
+
+func newExpBackoff() *backoff.ExponentialBackOff {
+	b := backoff.NewExponentialBackOff()
+	b.InitialInterval = backoffInterval
+	// MaxInterval caps the RetryInterval
+	b.MaxInterval = maxBackoffTime
+	// Never stops retrying
+	b.MaxElapsedTime = 0
+	return b
+}
+
+// Node e2 manager interface
+type Node interface {
+	Start() error
+	Stop() error
+}
+
+// Manager subscription manager
+type Manager struct {
+	e2client     e2client.Client
+	rnibClient   rnib.Client
+	serviceModel ServiceModelOptions
+	appConfig    *appConfig.AppConfig
+	streams      broker.Broker
+	monitor      *monitoring.Monitor
+	pciStore     metrics.Store
+}
+
+// NewManager creates a new subscription manager
+func NewManager(opts ...Option) (Manager, error) {
+	options := Options{}
+
+	for _, opt := range opts {
+		opt.apply(&options)
+	}
+
+	serviceModelName := e2client.ServiceModelName(options.ServiceModel.Name)
+	serviceModelVersion := e2client.ServiceModelVersion(options.ServiceModel.Version)
+	appID := e2client.AppID(options.App.AppID)
+	e2Client := e2client.NewClient(
+		e2client.WithServiceModel(serviceModelName, serviceModelVersion),
+		e2client.WithAppID(appID),
+		e2client.WithE2TAddress(options.E2TService.Host, options.E2TService.Port))
+
+	rnibClient, err := rnib.NewClient()
+	if err != nil {
+		return Manager{}, err
+	}
+
+	return Manager{
+		e2client:   e2Client,
+		rnibClient: rnibClient,
+		serviceModel: ServiceModelOptions{
+			Name:    options.ServiceModel.Name,
+			Version: options.ServiceModel.Version,
+		},
+		appConfig: options.App.AppConfig,
+		streams:   options.App.Broker,
+		monitor:   options.App.Monitor,
+		pciStore:  options.App.PCIStore,
+	}, nil
+
+}
+
+// Start starts subscription manager
+func (m *Manager) Start() error {
+	go func() {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		err := m.watchE2Connections(ctx)
+		if err != nil {
+			return
+		}
+	}()
+
+	go func() {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		err := m.watchConfigChanges(ctx)
+		if err != nil {
+			return
+		}
+	}()
+	return nil
+}
+
+func (m *Manager) watchConfigChanges(ctx context.Context) error {
+	ch := make(chan event.Event)
+	err := m.appConfig.Watch(ctx, ch)
+	if err != nil {
+		return err
+	}
+
+	// Deletes all of subscriptions
+	for configEvent := range ch {
+		if configEvent.Key == utils.ReportPeriodConfigPath {
+			subIDs := m.streams.SubIDs()
+			for _, subID := range subIDs {
+				_, err := m.streams.CloseStream(subID)
+				if err != nil {
+					log.Warn(err)
+					return err
+				}
+			}
+		}
+
+	}
+	// Gets all of connected E2 nodes and creates new subscriptions based on new report interval
+	e2NodeIDs, err := m.rnibClient.E2NodeIDs(ctx)
+	if err != nil {
+		log.Warn(err)
+		return err
+	}
+
+	for _, e2NodeID := range e2NodeIDs {
+		go func(e2NodeID topoapi.ID) {
+			err := m.newSubscription(ctx, e2NodeID)
+			if err != nil {
+				log.Warn(err)
+			}
+		}(e2NodeID)
+	}
+
+	return nil
+
+}
+
+func (m *Manager) sendIndicationOnStream(streamID broker.StreamID, ch chan e2api.Indication) {
+	streamWriter, err := m.streams.GetWriter(streamID)
+	if err != nil {
+		return
+	}
+
+	for msg := range ch {
+		err := streamWriter.Send(msg)
+		if err != nil {
+			log.Warn(err)
+			return
+		}
+	}
+}
+
+func (m *Manager) getRanFunction(serviceModelsInfo map[string]*topoapi.ServiceModelInfo) (*topoapi.RCRanFunction, error) {
+	log.Info("Service models:", serviceModelsInfo)
+	for _, sm := range serviceModelsInfo {
+		smName := strings.ToLower(sm.Name)
+		if smName == string(m.serviceModel.Name) && sm.OID == oid {
+			rcRanFunction := &topoapi.RCRanFunction{}
+			for _, ranFunction := range sm.RanFunctions {
+				if ranFunction.TypeUrl == ranFunction.GetTypeUrl() {
+					err := prototypes.UnmarshalAny(ranFunction, rcRanFunction)
+					if err != nil {
+						return nil, err
+					}
+					return rcRanFunction, nil
+				}
+			}
+		}
+	}
+	return nil, errors.New(errors.NotFound, "cannot retrieve ran functions")
+
+}
+
+func (m *Manager) createSubscription(ctx context.Context, e2nodeID topoapi.ID) error {
+	log.Info("Creating subscription for E2 node with ID:", e2nodeID)
+	eventTriggerData, err := subutils.CreateEventTriggerOnChange()
+	if err != nil {
+		log.Warn(err)
+		return err
+	}
+	aspects, err := m.rnibClient.GetE2NodeAspects(ctx, e2nodeID)
+	if err != nil {
+		log.Warn(err)
+		return err
+	}
+
+	_, err = m.getRanFunction(aspects.ServiceModels)
+	if err != nil {
+		log.Warn(err)
+		return err
+	}
+
+	actions := subutils.CreateSubscriptionActions()
+
+	ch := make(chan e2api.Indication)
+	node := m.e2client.Node(e2client.NodeID(e2nodeID))
+	subRequest := e2api.Subscription{
+		ID:      e2api.SubscriptionID(fmt.Sprintf("%s-%s", "onos-pci-subscription", e2nodeID)),
+		Actions: actions,
+		EventTrigger: e2api.EventTrigger{
+			Payload: eventTriggerData,
+		},
+	}
+	err = node.Subscribe(ctx, &subRequest, ch)
+	if err != nil {
+		return err
+	}
+
+	stream, err := m.streams.OpenReader(node, subRequest)
+	if err != nil {
+		return err
+	}
+
+	go m.sendIndicationOnStream(stream.StreamID(), ch)
+	go func() {
+		err = m.monitor.Start(ctx, node, subRequest, e2nodeID)
+		if err != nil {
+			log.Warn(err)
+		}
+
+	}()
+
+	return nil
+
+}
+
+func (m *Manager) newSubscription(ctx context.Context, e2NodeID topoapi.ID) error {
+	// TODO revisit this after migrating to use new E2 sdk, it should be the responsibility of the SDK to retry on this call
+	count := 0
+	notifier := func(err error, t time.Duration) {
+		count++
+		log.Infof("Retrying, failed to create subscription for E2 node with ID %s due to %s", e2NodeID, err)
+	}
+
+	err := backoff.RetryNotify(func() error {
+		err := m.createSubscription(ctx, e2NodeID)
+		return err
+	}, newExpBackoff(), notifier)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *Manager) watchE2Connections(ctx context.Context) error {
+	ch := make(chan topoapi.Event)
+	err := m.rnibClient.WatchE2Connections(ctx, ch)
+	if err != nil {
+		log.Warn(err)
+		return err
+	}
+
+	// creates a new subscription whenever there is a new E2 node connected and supports KPM service model
+	for topoEvent := range ch {
+		if topoEvent.Type == topoapi.EventType_ADDED || topoEvent.Type == topoapi.EventType_NONE {
+			relation := topoEvent.Object.Obj.(*topoapi.Object_Relation)
+			e2NodeID := relation.Relation.TgtEntityID
+			go func() {
+				err := m.newSubscription(ctx, e2NodeID)
+				if err != nil {
+					log.Warn(err)
+				}
+			}()
+			go m.watchPCIChanges(ctx, e2NodeID)
+		}
+
+	}
+	return nil
+}
+
+func (m *Manager) watchPCIChanges(ctx context.Context, e2nodeID topoapi.ID) {
+	ch := make(chan storeevent.Event)
+	err := m.pciStore.Watch(ctx, ch)
+	if err != nil {
+		return
+	}
+
+	for e := range ch {
+		if e.Type == metrics.Updated {
+			key := e.Key.(metrics.Key)
+			header, err := control.CreateRcControlHeader(key.CellGlobalID, 10)
+			if err != nil {
+				log.Warn(err)
+			}
+			payload, err := control.CreateRcControlMessage(10, "pci", 100)
+			if err != nil {
+				log.Warn(err)
+			}
+
+			node := m.e2client.Node(e2client.NodeID(e2nodeID))
+			outcome, err := node.Control(ctx, &e2api.ControlMessage{
+				Header:  header,
+				Payload: payload,
+			})
+			if err != nil {
+				log.Warn(err)
+			}
+			log.Info("Outcome", outcome)
+		}
+	}
+}
+
+// Stop stops the subscription manager
+func (m *Manager) Stop() error {
+	panic("implement me")
+}
+
+var _ Node = &Manager{}

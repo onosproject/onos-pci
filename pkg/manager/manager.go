@@ -5,94 +5,68 @@
 package manager
 
 import (
-	e2tapi "github.com/onosproject/onos-api/go/onos/e2t/e2"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-lib-go/pkg/northbound"
-	"github.com/onosproject/onos-pci/pkg/controller"
-	nbi "github.com/onosproject/onos-pci/pkg/northbound"
-	"github.com/onosproject/onos-pci/pkg/southbound/admin"
-	"github.com/onosproject/onos-pci/pkg/southbound/ricapie2"
-	"github.com/onosproject/onos-pci/pkg/store"
+	"github.com/onosproject/onos-pci/pkg/broker"
+	appConfig "github.com/onosproject/onos-pci/pkg/config"
+	"github.com/onosproject/onos-pci/pkg/monitoring"
+	"github.com/onosproject/onos-pci/pkg/southbound/e2"
+	"github.com/onosproject/onos-pci/pkg/store/metrics"
 	app "github.com/onosproject/onos-ric-sdk-go/pkg/config/app/default"
-	configurable "github.com/onosproject/onos-ric-sdk-go/pkg/config/registry"
-	configutils "github.com/onosproject/onos-ric-sdk-go/pkg/config/utils"
-	"sync"
 )
 
 var log = logging.GetLogger("manager")
 
 // Config is a manager configuration
 type Config struct {
-	CAPath        string
-	KeyPath       string
-	CertPath      string
-	ConfigPath    string
-	E2tEndpoint   string
-	E2SubEndpoint string
-	GRPCPort      int
-	AppConfig     *app.Config
-	RicActionID   int32
-	CtrlAcktimer  int32
+	CAPath      string
+	KeyPath     string
+	CertPath    string
+	ConfigPath  string
+	E2tEndpoint string
+	GRPCPort    int
+	AppConfig   *app.Config
+	SMName      string
+	SMVersion   string
 }
 
 // NewManager creates a new manager
 func NewManager(config Config) *Manager {
-	log.Info("Creating Manager")
-	indCh := make(chan *store.E2NodeIndication)
-	ctrlReqChs := make(map[string]chan *e2tapi.ControlRequest)
-	ctrlAckCh := make(chan *store.ControlAckMessages)
-	pciMon := make(map[string]*store.PciStat)
-	pciMonMutex := sync.RWMutex{}
-	return &Manager{
-		Config: config,
-		Sessions: SBSessions{
-			AdminSession: admin.NewSession(config.E2tEndpoint),
-			E2Session:    ricapie2.NewSession(config.E2tEndpoint, config.E2SubEndpoint, config.RicActionID, 0),
-		},
-		Chans: Channels{
-			IndCh:      indCh,
-			CtrlReqChs: ctrlReqChs,
-			CtrlAckCh:  ctrlAckCh,
-		},
-		Ctrls: Controllers{
-			PciCtrl: controller.NewPciController(indCh, ctrlReqChs, ctrlAckCh, pciMon, &pciMonMutex, config.CtrlAcktimer),
-		},
-		Mons: Monitors{
-			PciMonitor: pciMon,
-		},
+	appCfg, err := appConfig.NewConfig()
+	if err != nil {
+		log.Warn(err)
 	}
+	subscriptionBroker := broker.NewBroker()
+	pciStore := metrics.NewStore()
+	monitor := monitoring.NewMonitor(subscriptionBroker, appCfg, pciStore)
+
+	e2Manager, err := e2.NewManager(
+		e2.WithE2TAddress("onos-e2t", 5150),
+		e2.WithServiceModel(e2.ServiceModelName(config.SMName),
+			e2.ServiceModelVersion(config.SMVersion)),
+		e2.WithAppConfig(appCfg),
+		e2.WithAppID("onos-pci"),
+		e2.WithBroker(subscriptionBroker),
+		e2.WithMonitor(monitor),
+		e2.WithPCIStore(pciStore))
+
+	if err != nil {
+		log.Warn(err)
+	}
+
+	manager := &Manager{
+		appConfig: appCfg,
+		config:    config,
+		e2Manager: e2Manager,
+	}
+	return manager
 }
 
 // Manager is a manager for the PCI xAPP service
 type Manager struct {
-	Config   Config
-	Sessions SBSessions
-	Chans    Channels
-	Ctrls    Controllers
-	Mons     Monitors
-}
-
-// SBSessions is a set of Southbound sessions
-type SBSessions struct {
-	AdminSession *admin.E2AdminSession
-	E2Session    *ricapie2.E2Session
-}
-
-// Channels is a set of channels
-type Channels struct {
-	IndCh      chan *store.E2NodeIndication
-	CtrlReqChs map[string]chan *e2tapi.ControlRequest
-	CtrlAckCh  chan *store.ControlAckMessages
-}
-
-// Controllers is a set of controllers
-type Controllers struct {
-	PciCtrl *controller.PciCtrl
-}
-
-type Monitors struct {
-	PciMonitor      map[string]*store.PciStat
-	PciMonitorMutex sync.RWMutex
+	appConfig appConfig.Config
+	config    Config
+	e2Manager e2.Manager
 }
 
 // Run starts the manager and the associated services
@@ -111,22 +85,12 @@ func (m *Manager) Start() error {
 		return err
 	}
 
-	// Register the xApp as configurable entity
-	err = m.registerConfigurable()
+	err = m.e2Manager.Start()
 	if err != nil {
-		log.Error("Failed to register the app as a configurable entity", err)
+		log.Warn(err)
 		return err
 	}
 
-	// Start Southbound client to watch indication messages
-	m.Sessions.E2Session.ReportPeriodMs, err = m.getReportPeriod()
-	m.Sessions.E2Session.AppConfig = m.Config.AppConfig
-	if err != nil {
-		log.Errorf("Failed to get report period so period is set to 0ms: %v", err)
-	}
-
-	go m.Sessions.E2Session.Run(m.Chans.IndCh, m.Chans.CtrlReqChs, m.Chans.CtrlAckCh, m.Sessions.AdminSession)
-	go m.Ctrls.PciCtrl.Run()
 	return nil
 }
 
@@ -135,26 +99,16 @@ func (m *Manager) Close() {
 	log.Info("Closing Manager")
 }
 
-// registerConfigurable registers the xApp as a configurable entity
-func (m *Manager) registerConfigurable() error {
-	appConfig, err := configurable.RegisterConfigurable(m.Config.ConfigPath, &configurable.RegisterRequest{})
-	if err != nil {
-		return err
-	}
-	m.Config.AppConfig = appConfig.Config.(*app.Config)
-	return nil
-}
-
 func (m *Manager) startNorthboundServer() error {
 	s := northbound.NewServer(northbound.NewServerCfg(
-		m.Config.CAPath,
-		m.Config.KeyPath,
-		m.Config.CertPath,
-		int16(m.Config.GRPCPort),
+		m.config.CAPath,
+		m.config.KeyPath,
+		m.config.CertPath,
+		int16(m.config.GRPCPort),
 		true,
 		northbound.SecurityConfig{}))
 
-	s.AddService(nbi.NewService(m.Ctrls.PciCtrl))
+	//s.AddService(nbi.NewService(m.Ctrls.PciCtrl))
 
 	doneCh := make(chan error)
 	go func() {
@@ -167,16 +121,4 @@ func (m *Manager) startNorthboundServer() error {
 		}
 	}()
 	return <-doneCh
-}
-
-func (m *Manager) getReportPeriod() (uint64, error) {
-	interval, _ := m.Config.AppConfig.Get(ricapie2.ReportPeriodConfigPath)
-	val, err := configutils.ToUint64(interval.Value)
-	if err != nil {
-		log.Error(err)
-		return 0, err
-	}
-
-	log.Infof("Received period value: %v", val)
-	return val, nil
 }
