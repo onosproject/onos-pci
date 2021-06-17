@@ -218,7 +218,8 @@ func (s *E2Session) createSubscriptionRequest(nodeID string) (subscription.Subsc
 func (s *E2Session) createEventTriggerData() []byte {
 	log.Infof("Received period value: %v", s.ReportPeriodMs)
 
-	e2smRcEventTriggerDefinition, err := pdubuilder.CreateE2SmRcPreEventTriggerDefinitionPeriodic(int32(s.ReportPeriodMs))
+	e2smRcEventTriggerDefinition, err := pdubuilder.CreateE2SmRcPreEventTriggerDefinitionUponChange()
+	//e2smRcEventTriggerDefinition, err := pdubuilder.CreateE2SmRcPreEventTriggerDefinitionPeriodic(int32(s.ReportPeriodMs))
 	//e2smRcEventTriggerDefinition, err := pdubuilder.CreateE2SmRcPreEventTriggerDefinitionUponChange() - under test: not periodic but upon changed
 	if err != nil {
 		log.Errorf("Failed to create event trigger definition data: %v", err)
