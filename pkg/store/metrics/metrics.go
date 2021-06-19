@@ -152,13 +152,11 @@ func (s *store) UpdatePci(ctx context.Context, key Key, pci int32) error {
 	defer s.mu.Unlock()
 	if _, ok := s.metrics[key]; ok {
 		s.metrics[key].Value.(types.CellPCI).Metric.PCI = pci
-		log.Debugf("[before] Send event to watchers: key: %v, pci: %v", key, pci)
 		s.watchers.Send(event.Event{
 			Key:   key,
 			Value: s.metrics[key],
 			Type:  Updated,
 		})
-		log.Debugf("[after] Send event to watchers: key: %v, pci: %v", key, pci)
 		return nil
 	}
 	return errors.New(errors.NotFound, "the entry does not exist")
