@@ -4,7 +4,10 @@
 
 package types
 
-import e2smrcpreies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
+import (
+	topoapi "github.com/onosproject/onos-api/go/onos/topo"
+	e2smrcpreies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
+)
 
 const (
 	LowerPCI = 1
@@ -26,6 +29,7 @@ type CellMetric struct {
 
 // CellPCI is the PCI-NRT information
 type CellPCI struct {
+	E2NodeID    topoapi.ID
 	Metric      *CellMetric
 	PCIPoolList []*PCIPool
 	Neighbors   []*e2smrcpreies.Nrt

@@ -4,7 +4,7 @@
 
 package decode
 
-//DecodePlmnIdToUint32 decodes PLMN ID from byte array to uint32
+//PlmnIdToUint32 decodes PLMN ID from byte array to uint32
 func PlmnIdToUint32(plmnBytes []byte) uint32 {
 	return uint32(plmnBytes[0]) | uint32(plmnBytes[1])<<8 | uint32(plmnBytes[2])<<16
 }

@@ -5,10 +5,12 @@
 package manager
 
 import (
+	"context"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-lib-go/pkg/northbound"
 	"github.com/onosproject/onos-pci/pkg/broker"
 	appConfig "github.com/onosproject/onos-pci/pkg/config"
+	"github.com/onosproject/onos-pci/pkg/controller"
 	"github.com/onosproject/onos-pci/pkg/monitoring"
 	"github.com/onosproject/onos-pci/pkg/southbound/e2"
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
@@ -58,6 +60,7 @@ func NewManager(config Config) *Manager {
 		appConfig: appCfg,
 		config:    config,
 		e2Manager: e2Manager,
+		pciCtrl:   controller.NewPciController(pciStore),
 	}
 	return manager
 }
@@ -67,6 +70,7 @@ type Manager struct {
 	appConfig appConfig.Config
 	config    Config
 	e2Manager e2.Manager
+	pciCtrl   controller.PciController
 }
 
 // Run starts the manager and the associated services
@@ -90,6 +94,8 @@ func (m *Manager) Start() error {
 		log.Warn(err)
 		return err
 	}
+
+	m.pciCtrl.Run(context.Background())
 
 	return nil
 }
