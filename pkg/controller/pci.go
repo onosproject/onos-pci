@@ -38,7 +38,10 @@ func (p *PciController) Run(ctx context.Context) {
 
 func (p *PciController) resolvePciConflict(ctx context.Context) {
 	ch := make(chan event.Event)
-	p.MetricsStore.Watch(ctx, ch)
+	err := p.MetricsStore.Watch(ctx, ch)
+	if err != nil {
+		log.Error(err)
+	}
 	for e := range ch {
 		// new indication message arrives
 		if e.Type == metrics.Created {
@@ -53,7 +56,10 @@ func (p *PciController) resolvePciConflict(ctx context.Context) {
 
 			if changed {
 				log.Debugf("NewPCI for %v: %v", e.Value.(*metrics.Entry).Key, pci)
-				p.MetricsStore.UpdatePci(ctx, e.Value.(*metrics.Entry).Key, pci)
+				err := p.MetricsStore.UpdatePci(ctx, e.Value.(*metrics.Entry).Key, pci)
+				if err != nil {
+					log.Error(err)
+				}
 			}
 		}
 	}
@@ -137,7 +143,12 @@ func (p *PciController) neighborTraversal(ctx context.Context, rootKey metrics.K
 func (p *PciController) getEntryWithNeighborCGI(ctx context.Context, id *e2sm_rc_pre_v2.CellGlobalId) *metrics.Entry {
 	ch := make(chan *metrics.Entry)
 	var targetEntry *metrics.Entry = nil
-	go p.MetricsStore.Entries(ctx, ch)
+	go func(chan *metrics.Entry) {
+		err := p.MetricsStore.Entries(ctx, ch)
+		if err != nil {
+			log.Error(err)
+		}
+	}(ch)
 	for entry := range ch {
 		if p.isCGIEqual(id, entry.Key.CellGlobalID) {
 			targetEntry = entry
