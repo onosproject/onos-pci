@@ -6,6 +6,7 @@ package metrics
 
 import (
 	"context"
+	"github.com/onosproject/onos-pci/pkg/types"
 	"sync"
 
 	e2smrcpre "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
@@ -33,11 +34,14 @@ type Store interface {
 	// Update updates an existing entry in the store
 	Update(ctx context.Context, entry *Entry) error
 
+	// UpdatePci only updates pci in the existing entry
+	UpdatePci(ctx context.Context, key Key, pci int32) error
+
 	// Delete deletes an entry based on a given key
 	Delete(ctx context.Context, key Key) error
 
 	// Entries list all of the metric store entries
-	Entries(ctx context.Context, ch chan<- Entry) error
+	Entries(ctx context.Context, ch chan<- *Entry) error
 
 	// Watch measurement store changes
 	Watch(ctx context.Context, ch chan<- event.Event) error
@@ -58,7 +62,7 @@ func NewStore() Store {
 	}
 }
 
-func (s *store) Entries(ctx context.Context, ch chan<- Entry) error {
+func (s *store) Entries(ctx context.Context, ch chan<- *Entry) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -67,9 +71,9 @@ func (s *store) Entries(ctx context.Context, ch chan<- Entry) error {
 	}
 
 	for _, entry := range s.metrics {
-		ch <- *entry
+		ch <- entry
 	}
-
+	close(ch)
 	return nil
 }
 
@@ -128,6 +132,8 @@ func (s *store) Watch(ctx context.Context, ch chan<- event.Event) error {
 }
 
 func (s *store) Update(ctx context.Context, entry *Entry) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if _, ok := s.metrics[entry.Key]; ok {
 		s.metrics[entry.Key] = entry
 		s.watchers.Send(event.Event{
@@ -136,6 +142,21 @@ func (s *store) Update(ctx context.Context, entry *Entry) error {
 			Type:  Updated,
 		})
 
+		return nil
+	}
+	return errors.New(errors.NotFound, "the entry does not exist")
+}
+
+func (s *store) UpdatePci(ctx context.Context, key Key, pci int32) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.metrics[key]; ok {
+		s.metrics[key].Value.(types.CellPCI).Metric.PCI = pci
+		s.watchers.Send(event.Event{
+			Key:   key,
+			Value: s.metrics[key],
+			Type:  Updated,
+		})
 		return nil
 	}
 	return errors.New(errors.NotFound, "the entry does not exist")

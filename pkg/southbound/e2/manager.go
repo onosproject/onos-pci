@@ -7,6 +7,7 @@ package e2
 import (
 	"context"
 	"fmt"
+	"github.com/onosproject/onos-pci/pkg/types"
 	"strings"
 	"time"
 
@@ -317,13 +318,15 @@ func (m *Manager) watchPCIChanges(ctx context.Context, e2nodeID topoapi.ID) {
 	}
 
 	for e := range ch {
-		if e.Type == metrics.Updated {
+		if e.Type == metrics.Updated && e2nodeID == e.Value.(*metrics.Entry).Value.(types.CellPCI).E2NodeID {
 			key := e.Key.(metrics.Key)
 			header, err := control.CreateRcControlHeader(key.CellGlobalID, 10)
 			if err != nil {
 				log.Warn(err)
 			}
-			payload, err := control.CreateRcControlMessage(10, "pci", 100)
+			newPci := e.Value.(*metrics.Entry).Value.(types.CellPCI).Metric.PCI
+			log.Debugf("send control message for key: %v / pci: %v", e.Key, newPci)
+			payload, err := control.CreateRcControlMessage(10, "pci", newPci)
 			if err != nil {
 				log.Warn(err)
 			}

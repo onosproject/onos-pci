@@ -76,6 +76,7 @@ func (m *Monitor) processIndicationFormat1(ctx context.Context, indication e2api
 	pciPoolList = append(pciPoolList, pciPool)
 	cellKey := metrics.NewKey(cellCGI)
 	_, err = m.pciStore.Put(ctx, cellKey, types.CellPCI{
+		E2NodeID:    nodeID,
 		Metric: &types.CellMetric{
 			PCI: cellPCI,
 		},
