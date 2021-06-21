@@ -23,12 +23,8 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	e2api "github.com/onosproject/onos-api/go/onos/e2t/e2/v1beta1"
 
-	"github.com/onosproject/onos-pci/pkg/utils"
-
-	storeevent "github.com/onosproject/onos-pci/pkg/store/event"
-	"github.com/onosproject/onos-ric-sdk-go/pkg/config/event"
-
 	"github.com/onosproject/onos-pci/pkg/broker"
+	storeevent "github.com/onosproject/onos-pci/pkg/store/event"
 
 	appConfig "github.com/onosproject/onos-pci/pkg/config"
 
@@ -123,56 +119,7 @@ func (m *Manager) Start() error {
 		}
 	}()
 
-	go func() {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		err := m.watchConfigChanges(ctx)
-		if err != nil {
-			return
-		}
-	}()
 	return nil
-}
-
-func (m *Manager) watchConfigChanges(ctx context.Context) error {
-	ch := make(chan event.Event)
-	err := m.appConfig.Watch(ctx, ch)
-	if err != nil {
-		return err
-	}
-
-	// Deletes all of subscriptions
-	for configEvent := range ch {
-		if configEvent.Key == utils.ReportPeriodConfigPath {
-			channelIDs := m.streams.ChannelIDs()
-			for _, channelID := range channelIDs {
-				_, err := m.streams.CloseStream(ctx, channelID)
-				if err != nil {
-					log.Warn(err)
-					return err
-				}
-			}
-		}
-
-	}
-	// Gets all of connected E2 nodes and creates new subscriptions based on new report interval
-	e2NodeIDs, err := m.rnibClient.E2NodeIDs(ctx)
-	if err != nil {
-		log.Warn(err)
-		return err
-	}
-
-	for _, e2NodeID := range e2NodeIDs {
-		go func(e2NodeID topoapi.ID) {
-			err := m.newSubscription(ctx, e2NodeID)
-			if err != nil {
-				log.Warn(err)
-			}
-		}(e2NodeID)
-	}
-
-	return nil
-
 }
 
 func (m *Manager) sendIndicationOnStream(streamID broker.StreamID, ch chan e2api.Indication) {
@@ -234,7 +181,7 @@ func (m *Manager) createSubscription(ctx context.Context, e2nodeID topoapi.ID) e
 
 	ch := make(chan e2api.Indication)
 	node := m.e2client.Node(e2client.NodeID(e2nodeID))
-	subName := "onos-pci-subscription"
+	subName := "onos-pci-subscription" + string(e2nodeID)
 	subSpec := e2api.SubscriptionSpec{
 		Actions: actions,
 		EventTrigger: e2api.EventTrigger{
@@ -298,7 +245,6 @@ func (m *Manager) watchE2Connections(ctx context.Context) error {
 	// creates a new subscription whenever there is a new E2 node connected and supports KPM service model
 	for topoEvent := range ch {
 		if topoEvent.Type == topoapi.EventType_ADDED || topoEvent.Type == topoapi.EventType_NONE {
-
 			relation := topoEvent.Object.Obj.(*topoapi.Object_Relation)
 			e2NodeID := relation.Relation.TgtEntityID
 			go func() {
