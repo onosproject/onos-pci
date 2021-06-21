@@ -243,29 +243,27 @@ func (m *Manager) createSubscription(ctx context.Context, e2nodeID topoapi.ID) e
 	}
 	channelID, err := node.Subscribe(ctx, subName, subSpec, ch)
 	if err != nil {
+		log.Warn(err)
 		return err
 	}
-
+	log.Debugf("Channel ID:%s", channelID)
 	streamReader, err := m.streams.OpenReader(ctx, node, subName, channelID, subSpec)
 	if err != nil {
 		return err
 	}
 
 	go m.sendIndicationOnStream(streamReader.StreamID(), ch)
-	go func() {
-		monitor := monitoring.NewMonitor(monitoring.WithAppConfig(m.appConfig),
-			monitoring.WithMetricStore(m.metricStore),
-			monitoring.WithNode(node),
-			monitoring.WithStreamReader(streamReader),
-			monitoring.WithNodeID(e2nodeID),
-			monitoring.WithRNIBClient(m.rnibClient))
+	monitor := monitoring.NewMonitor(monitoring.WithAppConfig(m.appConfig),
+		monitoring.WithMetricStore(m.metricStore),
+		monitoring.WithNode(node),
+		monitoring.WithStreamReader(streamReader),
+		monitoring.WithNodeID(e2nodeID),
+		monitoring.WithRNIBClient(m.rnibClient))
 
-		err = monitor.Start(ctx)
-		if err != nil {
-			log.Warn(err)
-		}
-
-	}()
+	err = monitor.Start(ctx)
+	if err != nil {
+		log.Warn(err)
+	}
 
 	return nil
 
@@ -300,6 +298,7 @@ func (m *Manager) watchE2Connections(ctx context.Context) error {
 	// creates a new subscription whenever there is a new E2 node connected and supports KPM service model
 	for topoEvent := range ch {
 		if topoEvent.Type == topoapi.EventType_ADDED || topoEvent.Type == topoapi.EventType_NONE {
+
 			relation := topoEvent.Object.Obj.(*topoapi.Object_Relation)
 			e2NodeID := relation.Relation.TgtEntityID
 			go func() {
@@ -344,7 +343,7 @@ func (m *Manager) watchPCIChanges(ctx context.Context, e2nodeID topoapi.ID) {
 			if err != nil {
 				log.Warn(err)
 			}
-			log.Info("Outcome", outcome)
+			log.Infof("Outcome:%v", outcome)
 		}
 	}
 }
