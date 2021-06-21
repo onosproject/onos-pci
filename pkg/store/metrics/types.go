@@ -29,10 +29,13 @@ const (
 	Created
 	// Updated updated measurement event
 	Updated
+	// UpdatedPCI updated PCI in measurement
+	UpdatedPCI
 	// Deleted deleted measurement event
 	Deleted
+
 )
 
 func (e MetricEvent) String() string {
-	return [...]string{"None", "Created", "Updated", "Deleted"}[e]
+	return [...]string{"None", "Created", "Updated", "UpdatedPCI", "Deleted"}[e]
 }

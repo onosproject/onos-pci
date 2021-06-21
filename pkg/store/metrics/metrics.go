@@ -155,7 +155,7 @@ func (s *store) UpdatePci(ctx context.Context, key Key, pci int32) error {
 		s.watchers.Send(event.Event{
 			Key:   key,
 			Value: s.metrics[key],
-			Type:  Updated,
+			Type:  UpdatedPCI,
 		})
 		return nil
 	}

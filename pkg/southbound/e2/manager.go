@@ -318,7 +318,7 @@ func (m *Manager) watchPCIChanges(ctx context.Context, e2nodeID topoapi.ID) {
 	}
 
 	for e := range ch {
-		if e.Type == metrics.Updated && e2nodeID == e.Value.(*metrics.Entry).Value.(types.CellPCI).E2NodeID {
+		if e.Type == metrics.UpdatedPCI && e2nodeID == e.Value.(*metrics.Entry).Value.(types.CellPCI).E2NodeID {
 			key := e.Key.(metrics.Key)
 			header, err := control.CreateRcControlHeader(key.CellGlobalID, 10)
 			if err != nil {
