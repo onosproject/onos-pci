@@ -181,7 +181,7 @@ func (m *Manager) createSubscription(ctx context.Context, e2nodeID topoapi.ID) e
 
 	ch := make(chan e2api.Indication)
 	node := m.e2client.Node(e2client.NodeID(e2nodeID))
-	subName := "onos-pci-subscription" + string(e2nodeID)
+	subName := "onos-pci-subscription"
 	subSpec := e2api.SubscriptionSpec{
 		Actions: actions,
 		EventTrigger: e2api.EventTrigger{
