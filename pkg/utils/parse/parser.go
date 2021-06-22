@@ -5,7 +5,7 @@
 package parse
 
 import (
-	e2sm_rc_pre_v2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
+	e2smrcprev2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 )
 
@@ -21,19 +21,29 @@ func (c CGIType) String() string {
 	return [...]string{"CGITypeNRCGI", "CGITypeECGI", "CGITypeUnknown"}[c]
 }
 
-func ParseMetricKey(e *e2sm_rc_pre_v2.CellGlobalId) ([]byte, uint64, CGIType, error) {
+func ParseMetricKey(e *e2smrcprev2.CellGlobalId) ([]byte, uint64, CGIType, error) {
 	if e == nil {
 		return nil, 0, CGITypeUnknown, errors.NewNotFound("CellGlobalID is not found in entry Key field")
 	} else if e.GetNrCgi() != nil {
 		return e.GetNrCgi().GetPLmnIdentity().GetValue(),
-		e.GetNrCgi().GetNRcellIdentity().GetValue().Value,
-		CGITypeNrCGI,
-		nil
+			e.GetNrCgi().GetNRcellIdentity().GetValue().Value,
+			CGITypeNrCGI,
+			nil
 	} else if e.GetEUtraCgi() != nil {
 		return e.GetEUtraCgi().GetPLmnIdentity().GetValue(),
-		e.GetEUtraCgi().GetEUtracellIdentity().GetValue().Value,
-		CGITypeECGI,
-		nil
+			e.GetEUtraCgi().GetEUtracellIdentity().GetValue().Value,
+			CGITypeECGI,
+			nil
 	}
 	return nil, 0, CGITypeUnknown, errors.NewNotSupported("CGI should be one of NrCGI and ECGI")
+}
+
+func GetCellID(cellGlobalID *e2smrcprev2.CellGlobalId) (uint64, error) {
+	switch v := cellGlobalID.GetCellGlobalId().(type) {
+	case *e2smrcprev2.CellGlobalId_EUtraCgi:
+		return v.EUtraCgi.EUtracellIdentity.Value.Value, nil
+	case *e2smrcprev2.CellGlobalId_NrCgi:
+		return v.NrCgi.NRcellIdentity.Value.Value, nil
+	}
+	return 0, errors.New(errors.NotSupported, "CGI should be one of NrCGI and ECGI")
 }

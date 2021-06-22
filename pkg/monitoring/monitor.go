@@ -6,6 +6,9 @@ package monitoring
 
 import (
 	"context"
+	"strconv"
+
+	"github.com/onosproject/onos-pci/pkg/utils/parse"
 
 	"github.com/onosproject/onos-pci/pkg/rnib"
 
@@ -92,6 +95,16 @@ func (m *Monitor) processIndicationFormat1(ctx context.Context, indication e2api
 		Neighbors:   messageFormat1.GetNeighbors(),
 		PCIPoolList: pciPoolList,
 	})
+	if err != nil {
+		return err
+	}
+
+	cellID, err := parse.GetCellID(cellCGI)
+	if err != nil {
+		return err
+	}
+	cellTopoID := topoapi.ID(strconv.FormatUint(cellID, 16))
+	err = m.rnibClient.SetCellPCI(ctx, cellTopoID, uint32(cellPCI))
 	if err != nil {
 		return err
 	}

@@ -38,6 +38,29 @@ type Client struct {
 	client toposdk.Client
 }
 
+func (c *Client) SetCellPCI(ctx context.Context, cellID topoapi.ID, pci uint32) error {
+	object, err := c.client.Get(ctx, cellID)
+	if err != nil {
+		return err
+	}
+
+	if object != nil && object.GetEntity().GetKindID() == topoapi.ID(topoapi.RANEntityKinds_E2CELL.String()) {
+		cellObject := &topoapi.E2Cell{}
+		object.GetAspect(cellObject)
+		cellObject.PCI = pci
+		err := object.SetAspect(cellObject)
+		if err != nil {
+			return err
+		}
+		err = c.client.Update(ctx, object)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return nil
+}
+
 // GetCells get list of cells for each E2 node
 func (c *Client) GetCells(ctx context.Context, nodeID topoapi.ID) ([]*topoapi.E2Cell, error) {
 	objects, err := c.client.List(ctx, toposdk.WithListFilters(getContainsRelationFilter()))
