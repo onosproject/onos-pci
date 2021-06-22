@@ -7,7 +7,6 @@ package e2
 import (
 	"github.com/onosproject/onos-pci/pkg/broker"
 	appConfig "github.com/onosproject/onos-pci/pkg/config"
-	"github.com/onosproject/onos-pci/pkg/monitoring"
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
 )
 
@@ -30,9 +29,7 @@ type AppOptions struct {
 
 	Broker broker.Broker
 
-	Monitor *monitoring.Monitor
-
-	PCIStore metrics.Store
+	MetricStore metrics.Store
 }
 
 // E2TServiceOptions are the options for a E2T service
@@ -160,16 +157,9 @@ func WithBroker(broker broker.Broker) Option {
 	})
 }
 
-// WithMonitor sets monitoring interface
-func WithMonitor(monitor *monitoring.Monitor) Option {
+// WithMetricStore sets metric store
+func WithMetricStore(metricStore metrics.Store) Option {
 	return newOption(func(options *Options) {
-		options.App.Monitor = monitor
-	})
-}
-
-// WithPCIStore sets pci store
-func WithPCIStore(pciStore metrics.Store) Option {
-	return newOption(func(options *Options) {
-		options.App.PCIStore = pciStore
+		options.App.MetricStore = metricStore
 	})
 }

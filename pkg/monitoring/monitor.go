@@ -7,6 +7,8 @@ package monitoring
 import (
 	"context"
 
+	"github.com/onosproject/onos-pci/pkg/rnib"
+
 	"github.com/onosproject/onos-pci/pkg/types"
 
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
@@ -16,7 +18,6 @@ import (
 	e2api "github.com/onosproject/onos-api/go/onos/e2t/e2/v1beta1"
 
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
-	e2client "github.com/onosproject/onos-ric-sdk-go/pkg/e2/v1beta1"
 
 	appConfig "github.com/onosproject/onos-pci/pkg/config"
 
@@ -29,20 +30,28 @@ import (
 var log = logging.GetLogger("monitoring")
 
 // NewMonitor creates a new indication monitor
-func NewMonitor(streams broker.Broker,
-	appConfig *appConfig.AppConfig, pciStore metrics.Store) *Monitor {
+func NewMonitor(opts ...Option) *Monitor {
+	options := Options{}
+
+	for _, opt := range opts {
+		opt.apply(&options)
+	}
 	return &Monitor{
-		streams:   streams,
-		appConfig: appConfig,
-		pciStore:  pciStore,
+		streamReader: options.Monitor.StreamReader,
+		appConfig:    options.App.AppConfig,
+		metricStore:  options.App.MetricStore,
+		nodeID:       options.Monitor.NodeID,
+		rnibClient:   options.App.RNIBClient,
 	}
 }
 
 // Monitor indication monitor
 type Monitor struct {
-	streams   broker.Broker
-	appConfig *appConfig.AppConfig
-	pciStore  metrics.Store
+	streamReader broker.StreamReader
+	appConfig    *appConfig.AppConfig
+	metricStore  metrics.Store
+	nodeID       topoapi.ID
+	rnibClient   rnib.Client
 }
 
 func (m *Monitor) processIndicationFormat1(ctx context.Context, indication e2api.Indication, nodeID topoapi.ID) error {
@@ -75,8 +84,8 @@ func (m *Monitor) processIndicationFormat1(ctx context.Context, indication e2api
 
 	pciPoolList = append(pciPoolList, pciPool)
 	cellKey := metrics.NewKey(cellCGI)
-	_, err = m.pciStore.Put(ctx, cellKey, types.CellPCI{
-		E2NodeID:    nodeID,
+	_, err = m.metricStore.Put(ctx, cellKey, types.CellPCI{
+		E2NodeID: nodeID,
 		Metric: &types.CellMetric{
 			PCI: cellPCI,
 		},
@@ -101,20 +110,25 @@ func (m *Monitor) processIndication(ctx context.Context, indication e2api.Indica
 }
 
 // Start start monitoring of indication messages for a given subscription ID
-func (m *Monitor) Start(ctx context.Context, node e2client.Node, e2sub e2api.Subscription, nodeID topoapi.ID) error {
-	streamReader, err := m.streams.OpenReader(node, e2sub)
-	if err != nil {
-		return err
-	}
+func (m *Monitor) Start(ctx context.Context) error {
+	errCh := make(chan error)
+	go func() {
+		for {
+			indMsg, err := m.streamReader.Recv(ctx)
+			if err != nil {
+				errCh <- err
+			}
+			err = m.processIndication(ctx, indMsg, m.nodeID)
+			if err != nil {
+				errCh <- err
+			}
+		}
+	}()
 
-	for {
-		indMsg, err := streamReader.Recv(ctx)
-		if err != nil {
-			return err
-		}
-		err = m.processIndication(ctx, indMsg, nodeID)
-		if err != nil {
-			return err
-		}
+	select {
+	case err := <-errCh:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
 	}
 }

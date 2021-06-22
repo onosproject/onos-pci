@@ -6,12 +6,12 @@ package manager
 
 import (
 	"context"
+
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-lib-go/pkg/northbound"
 	"github.com/onosproject/onos-pci/pkg/broker"
 	appConfig "github.com/onosproject/onos-pci/pkg/config"
 	"github.com/onosproject/onos-pci/pkg/controller"
-	"github.com/onosproject/onos-pci/pkg/monitoring"
 	"github.com/onosproject/onos-pci/pkg/southbound/e2"
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
 	app "github.com/onosproject/onos-ric-sdk-go/pkg/config/app/default"
@@ -39,8 +39,7 @@ func NewManager(config Config) *Manager {
 		log.Warn(err)
 	}
 	subscriptionBroker := broker.NewBroker()
-	pciStore := metrics.NewStore()
-	monitor := monitoring.NewMonitor(subscriptionBroker, appCfg, pciStore)
+	metricStore := metrics.NewStore()
 
 	e2Manager, err := e2.NewManager(
 		e2.WithE2TAddress("onos-e2t", 5150),
@@ -49,8 +48,7 @@ func NewManager(config Config) *Manager {
 		e2.WithAppConfig(appCfg),
 		e2.WithAppID("onos-pci"),
 		e2.WithBroker(subscriptionBroker),
-		e2.WithMonitor(monitor),
-		e2.WithPCIStore(pciStore))
+		e2.WithMetricStore(metricStore))
 
 	if err != nil {
 		log.Warn(err)
@@ -60,7 +58,7 @@ func NewManager(config Config) *Manager {
 		appConfig: appCfg,
 		config:    config,
 		e2Manager: e2Manager,
-		pciCtrl:   controller.NewPciController(pciStore),
+		pciCtrl:   controller.NewPciController(metricStore),
 	}
 	return manager
 }

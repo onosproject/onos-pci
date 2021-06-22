@@ -6,10 +6,12 @@ package e2
 
 import (
 	"context"
-	"fmt"
-	"github.com/onosproject/onos-pci/pkg/types"
 	"strings"
 	"time"
+
+	"github.com/onosproject/onos-pci/pkg/monitoring"
+
+	"github.com/onosproject/onos-pci/pkg/types"
 
 	"github.com/onosproject/onos-pci/pkg/utils/control"
 
@@ -18,17 +20,11 @@ import (
 	prototypes "github.com/gogo/protobuf/types"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 
-	"github.com/onosproject/onos-pci/pkg/monitoring"
-
 	"github.com/cenkalti/backoff/v4"
 	e2api "github.com/onosproject/onos-api/go/onos/e2t/e2/v1beta1"
 
-	"github.com/onosproject/onos-pci/pkg/utils"
-
-	storeevent "github.com/onosproject/onos-pci/pkg/store/event"
-	"github.com/onosproject/onos-ric-sdk-go/pkg/config/event"
-
 	"github.com/onosproject/onos-pci/pkg/broker"
+	storeevent "github.com/onosproject/onos-pci/pkg/store/event"
 
 	appConfig "github.com/onosproject/onos-pci/pkg/config"
 
@@ -74,8 +70,7 @@ type Manager struct {
 	serviceModel ServiceModelOptions
 	appConfig    *appConfig.AppConfig
 	streams      broker.Broker
-	monitor      *monitoring.Monitor
-	pciStore     metrics.Store
+	metricStore  metrics.Store
 }
 
 // NewManager creates a new subscription manager
@@ -106,10 +101,9 @@ func NewManager(opts ...Option) (Manager, error) {
 			Name:    options.ServiceModel.Name,
 			Version: options.ServiceModel.Version,
 		},
-		appConfig: options.App.AppConfig,
-		streams:   options.App.Broker,
-		monitor:   options.App.Monitor,
-		pciStore:  options.App.PCIStore,
+		appConfig:   options.App.AppConfig,
+		streams:     options.App.Broker,
+		metricStore: options.App.MetricStore,
 	}, nil
 
 }
@@ -125,56 +119,7 @@ func (m *Manager) Start() error {
 		}
 	}()
 
-	go func() {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		err := m.watchConfigChanges(ctx)
-		if err != nil {
-			return
-		}
-	}()
 	return nil
-}
-
-func (m *Manager) watchConfigChanges(ctx context.Context) error {
-	ch := make(chan event.Event)
-	err := m.appConfig.Watch(ctx, ch)
-	if err != nil {
-		return err
-	}
-
-	// Deletes all of subscriptions
-	for configEvent := range ch {
-		if configEvent.Key == utils.ReportPeriodConfigPath {
-			subIDs := m.streams.SubIDs()
-			for _, subID := range subIDs {
-				_, err := m.streams.CloseStream(subID)
-				if err != nil {
-					log.Warn(err)
-					return err
-				}
-			}
-		}
-
-	}
-	// Gets all of connected E2 nodes and creates new subscriptions based on new report interval
-	e2NodeIDs, err := m.rnibClient.E2NodeIDs(ctx)
-	if err != nil {
-		log.Warn(err)
-		return err
-	}
-
-	for _, e2NodeID := range e2NodeIDs {
-		go func(e2NodeID topoapi.ID) {
-			err := m.newSubscription(ctx, e2NodeID)
-			if err != nil {
-				log.Warn(err)
-			}
-		}(e2NodeID)
-	}
-
-	return nil
-
 }
 
 func (m *Manager) sendIndicationOnStream(streamID broker.StreamID, ch chan e2api.Indication) {
@@ -236,31 +181,36 @@ func (m *Manager) createSubscription(ctx context.Context, e2nodeID topoapi.ID) e
 
 	ch := make(chan e2api.Indication)
 	node := m.e2client.Node(e2client.NodeID(e2nodeID))
-	subRequest := e2api.Subscription{
-		ID:      e2api.SubscriptionID(fmt.Sprintf("%s-%s", "onos-pci-subscription", e2nodeID)),
+	subName := "onos-pci-subscription"
+	subSpec := e2api.SubscriptionSpec{
 		Actions: actions,
 		EventTrigger: e2api.EventTrigger{
 			Payload: eventTriggerData,
 		},
 	}
-	err = node.Subscribe(ctx, &subRequest, ch)
+	channelID, err := node.Subscribe(ctx, subName, subSpec, ch)
+	if err != nil {
+		log.Warn(err)
+		return err
+	}
+	log.Debugf("Channel ID:%s", channelID)
+	streamReader, err := m.streams.OpenReader(ctx, node, subName, channelID, subSpec)
 	if err != nil {
 		return err
 	}
 
-	stream, err := m.streams.OpenReader(node, subRequest)
+	go m.sendIndicationOnStream(streamReader.StreamID(), ch)
+	monitor := monitoring.NewMonitor(monitoring.WithAppConfig(m.appConfig),
+		monitoring.WithMetricStore(m.metricStore),
+		monitoring.WithNode(node),
+		monitoring.WithStreamReader(streamReader),
+		monitoring.WithNodeID(e2nodeID),
+		monitoring.WithRNIBClient(m.rnibClient))
+
+	err = monitor.Start(ctx)
 	if err != nil {
-		return err
+		log.Warn(err)
 	}
-
-	go m.sendIndicationOnStream(stream.StreamID(), ch)
-	go func() {
-		err = m.monitor.Start(ctx, node, subRequest, e2nodeID)
-		if err != nil {
-			log.Warn(err)
-		}
-
-	}()
 
 	return nil
 
@@ -312,7 +262,7 @@ func (m *Manager) watchE2Connections(ctx context.Context) error {
 
 func (m *Manager) watchPCIChanges(ctx context.Context, e2nodeID topoapi.ID) {
 	ch := make(chan storeevent.Event)
-	err := m.pciStore.Watch(ctx, ch)
+	err := m.metricStore.Watch(ctx, ch)
 	if err != nil {
 		return
 	}
@@ -339,7 +289,7 @@ func (m *Manager) watchPCIChanges(ctx context.Context, e2nodeID topoapi.ID) {
 			if err != nil {
 				log.Warn(err)
 			}
-			log.Info("Outcome", outcome)
+			log.Infof("Outcome:%v", outcome)
 		}
 	}
 }

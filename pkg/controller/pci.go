@@ -6,6 +6,7 @@ package controller
 
 import (
 	"context"
+
 	e2sm_rc_pre_v2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
@@ -24,12 +25,12 @@ var log = logging.GetLogger("controller", "pci")
 
 func NewPciController(store metrics.Store) PciController {
 	return PciController{
-		MetricsStore: store,
+		metricStore: store,
 	}
 }
 
 type PciController struct {
-	MetricsStore metrics.Store
+	metricStore metrics.Store
 }
 
 func (p *PciController) Run(ctx context.Context) {
@@ -38,7 +39,7 @@ func (p *PciController) Run(ctx context.Context) {
 
 func (p *PciController) resolvePciConflict(ctx context.Context) {
 	ch := make(chan event.Event)
-	err := p.MetricsStore.Watch(ctx, ch)
+	err := p.metricStore.Watch(ctx, ch)
 	if err != nil {
 		log.Error(err)
 	}
@@ -56,7 +57,7 @@ func (p *PciController) resolvePciConflict(ctx context.Context) {
 
 			if changed {
 				log.Debugf("NewPCI for %v: %v", e.Value.(*metrics.Entry).Key, pci)
-				err := p.MetricsStore.UpdatePci(ctx, e.Value.(*metrics.Entry).Key, pci)
+				err := p.metricStore.UpdatePci(ctx, e.Value.(*metrics.Entry).Key, pci)
 				if err != nil {
 					log.Error(err)
 				}
@@ -116,7 +117,7 @@ func (p *PciController) neighborTraversal(ctx context.Context, rootKey metrics.K
 	for _, n := range entry.Value.(types.CellPCI).Neighbors {
 		// is CGI root key equal to neighbor CGI? - if so, skip; otherwise, mark pciMap as false
 		if !p.isCGIEqual(rootKey.CellGlobalID, n.GetCgi()) {
-			neighborEntry :=  p.getEntryWithNeighborCGI(ctx, n.GetCgi())
+			neighborEntry := p.getEntryWithNeighborCGI(ctx, n.GetCgi())
 			if neighborEntry != nil {
 				// if neighbor metric is in store - search store first:
 				// neighbor metric has more recent PCI than the neighbors field in entry,
@@ -144,7 +145,7 @@ func (p *PciController) getEntryWithNeighborCGI(ctx context.Context, id *e2sm_rc
 	ch := make(chan *metrics.Entry)
 	var targetEntry *metrics.Entry = nil
 	go func(chan *metrics.Entry) {
-		err := p.MetricsStore.Entries(ctx, ch)
+		err := p.metricStore.Entries(ctx, ch)
 		if err != nil {
 			log.Error(err)
 		}
