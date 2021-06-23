@@ -63,30 +63,25 @@ func (c *Client) SetCellPCI(ctx context.Context, cellID topoapi.ID, pci uint32) 
 
 // GetCells get list of cells for each E2 node
 func (c *Client) GetCells(ctx context.Context, nodeID topoapi.ID) ([]*topoapi.E2Cell, error) {
-	objects, err := c.client.List(ctx, toposdk.WithListFilters(getContainsRelationFilter()))
+	filter := &topoapi.Filters{
+		RelationFilter: &topoapi.RelationFilter{SrcId: string(nodeID),
+			RelationKind: topoapi.CONTAINS,
+			TargetKind:   ""}}
+
+	objects, err := c.client.List(ctx, toposdk.WithListFilters(filter))
 	if err != nil {
 		return nil, err
 	}
 	var cells []*topoapi.E2Cell
-
 	for _, obj := range objects {
-		relation := obj.GetRelation()
-		if relation.SrcEntityID == nodeID {
-			targetEntity := relation.TgtEntityID
-			object, err := c.client.Get(ctx, targetEntity)
-			if err != nil {
-				return nil, err
-			}
-			if object != nil && object.GetEntity().GetKindID() == topoapi.ID(topoapi.RANEntityKinds_E2CELL.String()) {
-				cellObject := &topoapi.E2Cell{}
-				object.GetAspect(cellObject)
-				cells = append(cells, cellObject)
-			}
+		targetEntity := obj.GetEntity()
+		if targetEntity.GetKindID() == topoapi.E2CELL {
+			cellObject := &topoapi.E2Cell{}
+			obj.GetAspect(cellObject)
+			cells = append(cells, cellObject)
 		}
 	}
-
 	return cells, nil
-
 }
 
 // E2NodeIDs lists all of connected E2 nodes
@@ -119,31 +114,12 @@ func (c *Client) GetE2NodeAspects(ctx context.Context, nodeID topoapi.ID) (*topo
 
 }
 
-func getContainsRelationFilter() *topoapi.Filters {
-	containsRelationFilter := &topoapi.Filters{
-		KindFilters: []*topoapi.Filter{
-			{
-				Filter: &topoapi.Filter_Equal_{
-					Equal_: &topoapi.EqualFilter{
-						Value: topoapi.RANRelationKinds_CONTAINS.String(),
-					},
-				},
-			},
-		},
-	}
-
-	return containsRelationFilter
-
-}
-
 func getControlRelationFilter() *topoapi.Filters {
 	controlRelationFilter := &topoapi.Filters{
-		KindFilters: []*topoapi.Filter{
-			{
-				Filter: &topoapi.Filter_Equal_{
-					Equal_: &topoapi.EqualFilter{
-						Value: topoapi.RANRelationKinds_CONTROLS.String(),
-					},
+		KindFilter: &topoapi.Filter{
+			Filter: &topoapi.Filter_Equal_{
+				Equal_: &topoapi.EqualFilter{
+					Value: topoapi.CONTROLS,
 				},
 			},
 		},
