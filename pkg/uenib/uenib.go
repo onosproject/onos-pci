@@ -6,10 +6,12 @@ package uenib
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	types2 "github.com/gogo/protobuf/types"
 	"github.com/onosproject/onos-api/go/onos/uenib"
 	e2sm_rc_pre_v2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
+	"github.com/onosproject/onos-lib-go/pkg/certs"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-lib-go/pkg/southbound"
 	"github.com/onosproject/onos-pci/pkg/rnib"
@@ -18,6 +20,9 @@ import (
 	"github.com/onosproject/onos-pci/pkg/types"
 	"github.com/onosproject/onos-pci/pkg/utils/decode"
 	"github.com/onosproject/onos-pci/pkg/utils/parse"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"time"
 )
 
 const (
@@ -27,8 +32,42 @@ const (
 
 var log = logging.GetLogger("uenib")
 
+func NewUENIBDialOpt(certPath string, keyPath string) ([]grpc.DialOption, error) {
+	dialOpts := []grpc.DialOption{
+		grpc.WithStreamInterceptor(southbound.RetryingStreamClientInterceptor(100 * time.Millisecond)),
+		grpc.WithUnaryInterceptor(southbound.RetryingUnaryClientInterceptor()),
+	}
+	if certPath != "" && keyPath != "" {
+		cert, err := tls.LoadX509KeyPair(certPath, keyPath)
+		if err != nil {
+			return nil, err
+		}
+		dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+			Certificates:       []tls.Certificate{cert},
+			InsecureSkipVerify: true,
+		})))
+	} else {
+		// Load default Certificates
+		cert, err := tls.X509KeyPair([]byte(certs.DefaultClientCrt), []byte(certs.DefaultClientKey))
+		if err != nil {
+			log.Errorf("failed to make tls key pair: %v", err)
+			return nil, err
+		}
+		dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+			Certificates:       []tls.Certificate{cert},
+			InsecureSkipVerify: true,
+		})))
+	}
+
+	return dialOpts, nil
+}
+
 func NewUENIBClient(ctx context.Context, store metrics.Store, certPath string, keyPath string) Client {
-	conn, err := southbound.Connect(ctx, UENIBAddress, certPath, keyPath)
+	dialOpts, err := NewUENIBDialOpt(certPath, keyPath)
+	if err != nil {
+		log.Error(err)
+	}
+	conn, err := grpc.Dial(UENIBAddress, dialOpts...)
 	if err != nil {
 		log.Error(err)
 	}
