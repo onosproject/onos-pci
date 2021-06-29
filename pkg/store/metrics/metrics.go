@@ -6,8 +6,9 @@ package metrics
 
 import (
 	"context"
-	"github.com/onosproject/onos-pci/pkg/types"
 	"sync"
+
+	"github.com/onosproject/onos-pci/pkg/types"
 
 	e2smrcpre "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
 
@@ -41,7 +42,7 @@ type Store interface {
 	Delete(ctx context.Context, key Key) error
 
 	// Entries list all of the metric store entries
-	Entries(ctx context.Context, ch chan<- *Entry) error
+	Entries(ctx context.Context, ch chan *Entry) error
 
 	// Watch measurement store changes
 	Watch(ctx context.Context, ch chan<- event.Event) error
@@ -62,7 +63,7 @@ func NewStore() Store {
 	}
 }
 
-func (s *store) Entries(ctx context.Context, ch chan<- *Entry) error {
+func (s *store) Entries(ctx context.Context, ch chan *Entry) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
