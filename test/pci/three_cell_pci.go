@@ -40,7 +40,7 @@ func (s *TestSuite) TestThreeCellPci(t *testing.T) {
 	err = store.Watch(context.Background(), ch)
 	assert.NoError(t, err)
 
-	// Anique PCI values.
+	// Unique PCI values.
 	pcis := make(map[int32]int32)
 
 	// Accrue unique PCI values. We start with two (one conflict in three cells) and will exit once we have

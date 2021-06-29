@@ -43,8 +43,8 @@ func (s *TestSuite) SetupTestSuite(c *input.Context) error {
 	if err != nil {
 		return err
 	}
-	sdran.Set("ran-simulator.pci.metricName", "scale-rc-pci").
-		Set("ran-simulator.pci.modelName", "scale-model")
+	sdran.Set("ran-simulator.pci.metricName", "metrics").
+		Set("ran-simulator.pci.modelName", "model")
 	return sdran.Install(true)
 }
 
