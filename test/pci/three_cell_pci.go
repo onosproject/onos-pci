@@ -5,13 +5,9 @@
 package pci
 
 import (
-	"context"
-	"fmt"
 	"github.com/onosproject/onos-lib-go/pkg/certs"
 	"github.com/onosproject/onos-pci/pkg/manager"
-	"github.com/onosproject/onos-pci/pkg/store/event"
-	"github.com/onosproject/onos-pci/pkg/store/metrics"
-	"github.com/onosproject/onos-pci/pkg/types"
+	"github.com/onosproject/onos-pci/test/utils"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -34,24 +30,6 @@ func (s *TestSuite) TestThreeCellPci(t *testing.T) {
 	mgr := manager.NewManager(cfg)
 	mgr.Run()
 
-	// Get the metrics store and wait for an event indicating a change
-	store := mgr.GetMetricsStore()
-	ch := make(chan event.Event)
-	err = store.Watch(context.Background(), ch)
+	err = utils.WaitForNoConflicts(t, mgr)
 	assert.NoError(t, err)
-
-	// Unique PCI values.
-	pcis := make(map[int32]int32)
-
-	// Accrue unique PCI values. We start with two (one conflict in three cells) and will exit once we have
-	// three unique values, which indicates that the PCI conflict was resolved.
-	for e := range ch {
-		pciEntry := e.Value.(*metrics.Entry).Value.(types.CellPCI)
-		t.Log(fmt.Sprintf("Call %v has PCI %d", e.Key, pciEntry.Metric.PCI))
-		pcis[pciEntry.Metric.PCI] = pciEntry.Metric.PCI
-		if len(pcis) > 2 {
-			t.Log("PCI conflict eliminated")
-			break
-		}
-	}
 }
