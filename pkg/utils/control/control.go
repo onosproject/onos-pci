@@ -32,7 +32,10 @@ func CreateRcControlHeader(cgi *e2smrcpre.CellGlobalId, priority *int32) ([]byte
 }
 
 func CreateRcControlMessage(ranParamID int32, ranParamName string, ranParamValue uint32) ([]byte, error) {
-	ranParamValueInt, _ := pdubuilder.CreateRanParameterValueInt(ranParamValue)
+	ranParamValueInt, err := pdubuilder.CreateRanParameterValueInt(ranParamValue)
+	if err != nil {
+		return []byte{}, err
+	}
 	newE2SmRcPrePdu, err := pdubuilder.CreateE2SmRcPreControlMessage(ranParamID, ranParamName, ranParamValueInt)
 	if err != nil {
 		return []byte{}, err
