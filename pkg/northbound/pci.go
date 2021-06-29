@@ -37,6 +37,11 @@ func (s Service) Register(r *grpc.Server) {
 	pciapi.RegisterPciServer(r, server)
 }
 
+// NewTestServer returns a server for testing purposes
+func NewTestServer(store metrics.Store) *Server {
+	return &Server{store: store}
+}
+
 type Server struct {
 	store metrics.Store
 }
@@ -58,7 +63,7 @@ func (s *Server) GetConflicts(ctx context.Context, request *pciapi.GetConflictsR
 			}
 		}
 	} else {
-		ch := make(chan *metrics.Entry)
+		ch := make(chan *metrics.Entry, 1024)
 		err := s.store.Entries(ctx, ch)
 		if err != nil {
 			return nil, err

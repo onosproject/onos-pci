@@ -6,9 +6,10 @@ package manager
 
 import (
 	"context"
+	"github.com/onosproject/onos-pci/pkg/northbound"
 
 	"github.com/onosproject/onos-lib-go/pkg/logging"
-	"github.com/onosproject/onos-lib-go/pkg/northbound"
+	nblib "github.com/onosproject/onos-lib-go/pkg/northbound"
 	"github.com/onosproject/onos-pci/pkg/broker"
 	appConfig "github.com/onosproject/onos-pci/pkg/config"
 	"github.com/onosproject/onos-pci/pkg/controller"
@@ -108,15 +109,15 @@ func (m *Manager) Close() {
 }
 
 func (m *Manager) startNorthboundServer() error {
-	s := northbound.NewServer(northbound.NewServerCfg(
+	s := nblib.NewServer(nblib.NewServerCfg(
 		m.config.CAPath,
 		m.config.KeyPath,
 		m.config.CertPath,
 		int16(m.config.GRPCPort),
 		true,
-		northbound.SecurityConfig{}))
+		nblib.SecurityConfig{}))
 
-	//s.AddService(nbi.NewService(m.Ctrls.PciCtrl))
+	s.AddService(northbound.NewService(m.GetMetricsStore()))
 
 	doneCh := make(chan error)
 	go func() {
@@ -129,4 +130,9 @@ func (m *Manager) startNorthboundServer() error {
 		}
 	}()
 	return <-doneCh
+}
+
+// GetMetricsStore returns the metrics store - for testing
+func (m *Manager) GetMetricsStore() metrics.Store {
+	return m.e2Manager.GetMetricsStore()
 }

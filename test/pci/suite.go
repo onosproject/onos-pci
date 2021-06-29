@@ -8,7 +8,7 @@ import (
 	"github.com/onosproject/helmit/pkg/helm"
 	"github.com/onosproject/helmit/pkg/input"
 	"github.com/onosproject/helmit/pkg/test"
-	"github.com/onosproject/onos-pci/pkg/test/utils"
+	"github.com/onosproject/onos-pci/test/utils"
 )
 
 // TestSuite is the primary onos-pci test suite

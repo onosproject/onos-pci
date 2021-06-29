@@ -45,7 +45,7 @@ type Store interface {
 	Entries(ctx context.Context, ch chan *Entry) error
 
 	// Watch measurement store changes
-	Watch(ctx context.Context, ch chan<- event.Event) error
+	Watch(ctx context.Context, ch chan event.Event) error
 }
 
 type store struct {
@@ -64,8 +64,9 @@ func NewStore() Store {
 }
 
 func (s *store) Entries(ctx context.Context, ch chan *Entry) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	defer close(ch)
 
 	if len(s.metrics) == 0 {
 		return errors.New(errors.NotFound, "no measurements entries stored")
@@ -74,7 +75,6 @@ func (s *store) Entries(ctx context.Context, ch chan *Entry) error {
 	for _, entry := range s.metrics {
 		ch <- entry
 	}
-	close(ch)
 	return nil
 }
 
@@ -105,15 +105,15 @@ func (s *store) Put(ctx context.Context, key Key, value interface{}) (*Entry, er
 }
 
 func (s *store) Get(ctx context.Context, key Key) (*Entry, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	if v, ok := s.metrics[key]; ok {
 		return v, nil
 	}
 	return nil, errors.New(errors.NotFound, "the measurement entry does not exist")
 }
 
-func (s *store) Watch(ctx context.Context, ch chan<- event.Event) error {
+func (s *store) Watch(ctx context.Context, ch chan event.Event) error {
 	id := uuid.New()
 	err := s.watchers.AddWatcher(id, ch)
 	if err != nil {

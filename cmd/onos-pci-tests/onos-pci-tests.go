@@ -7,8 +7,8 @@ package main
 import (
 	"github.com/onosproject/helmit/pkg/registry"
 	"github.com/onosproject/helmit/pkg/test"
-	"github.com/onosproject/onos-pci/pkg/test/pci"
-	"github.com/onosproject/onos-pci/pkg/test/scale"
+	"github.com/onosproject/onos-pci/test/pci"
+	"github.com/onosproject/onos-pci/test/scale"
 )
 
 func main() {

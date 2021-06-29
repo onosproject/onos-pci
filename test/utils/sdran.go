@@ -5,7 +5,15 @@
 package utils
 
 import (
+	"context"
+	"fmt"
 	"github.com/onosproject/helmit/pkg/input"
+	"github.com/onosproject/onos-api/go/onos/pci"
+	"github.com/onosproject/onos-pci/pkg/manager"
+	"github.com/onosproject/onos-pci/pkg/northbound"
+	"github.com/onosproject/onos-pci/pkg/store/event"
+	"github.com/onosproject/onos-pci/pkg/store/metrics"
+	"github.com/onosproject/onos-pci/pkg/types"
 	"testing"
 
 	"github.com/onosproject/helmit/pkg/helm"
@@ -43,7 +51,7 @@ func CreateSdranRelease(c *input.Context) (*helm.HelmRelease, error) {
 		SetUsername(username).
 		SetPassword(password).
 		Set("import.onos-config.enabled", false).
-		Set("import.onos-topo.enabled", false).
+		Set("import.onos-topo.enabled", true).
 		Set("import.ran-simulator.enabled", true).
 		Set("import.onos-pci.enabled", false).
 		Set("global.image.registry", registry)
@@ -79,4 +87,31 @@ func CreateRanSimulatorWithName(t *testing.T, name string) *helm.HelmRelease {
 	assert.NoError(t, err, "could not install device simulator %v", err)
 
 	return simulator
+}
+
+// WaitForNoConflicts uses the current manager and events in the store to wait until no PCI conflicts exist
+func WaitForNoConflicts(t *testing.T, mgr *manager.Manager) error {
+	// Get the metrics store and a test service
+	store := mgr.GetMetricsStore()
+	server := northbound.NewTestServer(store)
+
+	// Wait for changes in the metrics store...
+	ch := make(chan event.Event)
+	err := store.Watch(context.Background(), ch)
+	assert.NoError(t, err)
+
+	// After each event, check for number of remaining conflicts
+	for e := range ch {
+		pciEntry := e.Value.(*metrics.Entry).Value.(types.CellPCI)
+		t.Log(fmt.Sprintf("Call %v has PCI %d", e.Key, pciEntry.Metric.PCI))
+
+		resp, err := server.GetConflicts(context.Background(), &pci.GetConflictsRequest{})
+		assert.NoError(t, err)
+		if len(resp.Cells) == 0 {
+			t.Log("All PCI conflicts eliminated")
+			break
+		}
+		t.Log(fmt.Sprintf("Remaining PCI conflicts: %v", resp.Cells))
+	}
+	return err
 }
