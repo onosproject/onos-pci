@@ -130,3 +130,8 @@ func (m *Manager) startNorthboundServer() error {
 	}()
 	return <-doneCh
 }
+
+// GetMetricsStore returns the metrics store
+func (m *Manager) GetMetricsStore() metrics.Store {
+	return m.e2Manager.GetMetricsStore()
+}

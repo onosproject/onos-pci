@@ -43,7 +43,7 @@ func CreateSdranRelease(c *input.Context) (*helm.HelmRelease, error) {
 		SetUsername(username).
 		SetPassword(password).
 		Set("import.onos-config.enabled", false).
-		Set("import.onos-topo.enabled", false).
+		Set("import.onos-topo.enabled", true).
 		Set("import.ran-simulator.enabled", true).
 		Set("import.onos-pci.enabled", false).
 		Set("global.image.registry", registry)

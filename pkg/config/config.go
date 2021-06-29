@@ -6,6 +6,7 @@ package config
 
 import (
 	"context"
+	"os"
 
 	configurable "github.com/onosproject/onos-ric-sdk-go/pkg/config/registry"
 
@@ -30,6 +31,9 @@ type Config interface {
 
 // NewConfig initialize the xApp config
 func NewConfig() (*AppConfig, error) {
+	if _, err := os.Stat(defaultConfigPath); os.IsNotExist(err) {
+		return nil, nil
+	}
 	appConfig, err := configurable.RegisterConfigurable(defaultConfigPath, &configurable.RegisterRequest{})
 	if err != nil {
 		return nil, err

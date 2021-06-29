@@ -45,7 +45,7 @@ type Store interface {
 	Entries(ctx context.Context, ch chan *Entry) error
 
 	// Watch measurement store changes
-	Watch(ctx context.Context, ch chan<- event.Event) error
+	Watch(ctx context.Context, ch chan event.Event) error
 }
 
 type store struct {
@@ -113,7 +113,7 @@ func (s *store) Get(ctx context.Context, key Key) (*Entry, error) {
 	return nil, errors.New(errors.NotFound, "the measurement entry does not exist")
 }
 
-func (s *store) Watch(ctx context.Context, ch chan<- event.Event) error {
+func (s *store) Watch(ctx context.Context, ch chan event.Event) error {
 	id := uuid.New()
 	err := s.watchers.AddWatcher(id, ch)
 	if err != nil {
