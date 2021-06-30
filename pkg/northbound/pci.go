@@ -13,7 +13,6 @@ import (
 	service "github.com/onosproject/onos-lib-go/pkg/northbound"
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
 
-	ransim_types "github.com/onosproject/onos-api/go/onos/ransim/types"
 	"github.com/onosproject/onos-pci/pkg/types"
 	"google.golang.org/grpc"
 )
@@ -54,7 +53,7 @@ func (s *Server) GetConflicts(ctx context.Context, request *pciapi.GetConflictsR
 	log.Infof("Received PCI Conflicts Request %v", request)
 	conflicts := make([]*pciapi.PciCell, 0)
 	if request.CellId != 0 {
-		cell, err := s.store.Get(ctx, metrics.NewKey(&e2sm_rc_pre_v2.CellGlobalId{CellGlobalId: &e2sm_rc_pre_v2.CellGlobalId_NrCgi{NrCgi: intToNRCGI(request.CellId)}}))
+		cell, err := s.store.Get(ctx, request.CellId)
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +86,7 @@ func (s *Server) GetConflicts(ctx context.Context, request *pciapi.GetConflictsR
 
 func (s *Server) GetCell(ctx context.Context, request *pciapi.GetCellRequest) (*pciapi.GetCellResponse, error) {
 	log.Infof("Received PCI Cell Request %v", request)
-	cell, err := s.store.Get(ctx, metrics.NewKey(&e2sm_rc_pre_v2.CellGlobalId{CellGlobalId: &e2sm_rc_pre_v2.CellGlobalId_NrCgi{NrCgi: intToNRCGI(request.CellId)}}))
+	cell, err := s.store.Get(ctx, request.CellId)
 	if err != nil {
 		return nil, err
 	}
@@ -106,27 +105,6 @@ func (s *Server) GetCells(ctx context.Context, request *pciapi.GetCellsRequest) 
 		output = append(output, cellPciToPciCell(c.Key, c.Value))
 	}
 	return &pciapi.GetCellsResponse{Cells: output}, nil
-}
-
-// converting from uint64 to NRCGI's
-// ! FIX ME, only creates 5g (TODO)
-func intToNRCGI(ncgi uint64) *e2sm_rc_pre_v2.Nrcgi {
-	plmnid := uint32(ransim_types.GetPlmnID(ncgi))
-	bitmask := uint32(0xFF)
-	nci := uint64(ransim_types.GetNCI(ransim_types.NCGI(ncgi)))
-
-	temp := &e2sm_rc_pre_v2.Nrcgi{
-		PLmnIdentity: &e2sm_rc_pre_v2.PlmnIdentity{
-			Value: []byte{byte((plmnid >> 0) & bitmask), byte((plmnid >> 8) & bitmask), byte((plmnid >> 16) & bitmask)},
-		},
-		NRcellIdentity: &e2sm_rc_pre_v2.NrcellIdentity{
-			Value: &e2sm_rc_pre_v2.BitString{
-				Value: nci,
-				Len:   36,
-			},
-		},
-	}
-	return temp
 }
 
 // convert from NRCGI to uint64
