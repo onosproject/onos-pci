@@ -7,14 +7,13 @@ package utils
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/onosproject/helmit/pkg/input"
 	"github.com/onosproject/onos-api/go/onos/pci"
 	"github.com/onosproject/onos-pci/pkg/manager"
 	"github.com/onosproject/onos-pci/pkg/northbound"
-	"github.com/onosproject/onos-pci/pkg/store/event"
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
-	"github.com/onosproject/onos-pci/pkg/types"
-	"testing"
 
 	"github.com/onosproject/helmit/pkg/helm"
 	"github.com/onosproject/helmit/pkg/kubernetes"
@@ -22,6 +21,7 @@ import (
 	"github.com/onosproject/onos-test/pkg/onostest"
 	"github.com/stretchr/testify/assert"
 )
+
 func getCredentials() (string, string, error) {
 	kubClient, err := kubernetes.New()
 	if err != nil {
@@ -96,13 +96,13 @@ func WaitForNoConflicts(t *testing.T, mgr *manager.Manager) error {
 	server := northbound.NewTestServer(store)
 
 	// Wait for changes in the metrics store...
-	ch := make(chan event.Event)
+	ch := make(chan metrics.Event)
 	err := store.Watch(context.Background(), ch)
 	assert.NoError(t, err)
 
 	// After each event, check for number of remaining conflicts
 	for e := range ch {
-		pciEntry := e.Value.(*metrics.Entry).Value.(types.CellPCI)
+		pciEntry := e.Value.Value
 		t.Log(fmt.Sprintf("Call %v has PCI %d", e.Key, pciEntry.Metric.PCI))
 
 		resp, err := server.GetConflicts(context.Background(), &pci.GetConflictsRequest{})

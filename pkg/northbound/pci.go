@@ -9,13 +9,15 @@ import (
 
 	pciapi "github.com/onosproject/onos-api/go/onos/pci"
 	e2sm_rc_pre_v2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
+	"github.com/onosproject/onos-lib-go/pkg/logging"
 	service "github.com/onosproject/onos-lib-go/pkg/northbound"
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
 
-	ransim_types "github.com/onosproject/onos-api/go/onos/ransim/types"
 	"github.com/onosproject/onos-pci/pkg/types"
 	"google.golang.org/grpc"
 )
+
+var log = logging.GetLogger("e2", "subscription", "manager")
 
 // NewService returns a new PCI interface service.
 func NewService(store metrics.Store) service.Service {
@@ -48,18 +50,19 @@ type Server struct {
 
 // GetNumConflicts returns how many conflicts occur for a given cell or cells in total
 func (s *Server) GetConflicts(ctx context.Context, request *pciapi.GetConflictsRequest) (*pciapi.GetConflictsResponse, error) {
+	log.Infof("Received PCI Conflicts Request %v", request)
 	conflicts := make([]*pciapi.PciCell, 0)
 	if request.CellId != 0 {
-		cell, err := s.store.Get(ctx, metrics.NewKey(&e2sm_rc_pre_v2.CellGlobalId{CellGlobalId: &e2sm_rc_pre_v2.CellGlobalId_NrCgi{NrCgi: intToNRCGI(request.CellId)}}))
+		cell, err := s.store.Get(ctx, request.CellId)
 		if err != nil {
 			return nil, err
 		}
-		pci := cell.Value.(types.CellPCI).Metric.PCI
-		for i := range cell.Value.(types.CellPCI).Neighbors {
-			neighbor := cell.Value.(types.CellPCI).Neighbors[i]
+		pci := cell.Value.Metric.PCI
+		for i := range cell.Value.Neighbors {
+			neighbor := cell.Value.Neighbors[i]
 			if pci == neighbor.Pci.Value {
 				temp, _ := s.store.Get(ctx, metrics.NewKey(neighbor.Cgi))
-				conflicts = append(conflicts, cellPciToPciCell(temp.Key, temp.Value.(types.CellPCI)))
+				conflicts = append(conflicts, cellPciToPciCell(temp.Key, temp.Value))
 			}
 		}
 	} else {
@@ -70,10 +73,10 @@ func (s *Server) GetConflicts(ctx context.Context, request *pciapi.GetConflictsR
 		}
 		// if a cell has a conflict, we only have to append the cell b/c conflicting neighbors will be appended individually
 		for cell := range ch {
-			pci := cell.Value.(types.CellPCI).Metric.PCI
-			for i := range cell.Value.(types.CellPCI).Neighbors {
-				if pci == cell.Value.(types.CellPCI).Neighbors[i].Pci.Value {
-					conflicts = append(conflicts, cellPciToPciCell(cell.Key, cell.Value.(types.CellPCI)))
+			pci := cell.Value.Metric.PCI
+			for i := range cell.Value.Neighbors {
+				if pci == cell.Value.Neighbors[i].Pci.Value {
+					conflicts = append(conflicts, cellPciToPciCell(cell.Key, cell.Value))
 				}
 			}
 		}
@@ -82,46 +85,26 @@ func (s *Server) GetConflicts(ctx context.Context, request *pciapi.GetConflictsR
 }
 
 func (s *Server) GetCell(ctx context.Context, request *pciapi.GetCellRequest) (*pciapi.GetCellResponse, error) {
-	cell, err := s.store.Get(ctx, metrics.NewKey(&e2sm_rc_pre_v2.CellGlobalId{CellGlobalId: &e2sm_rc_pre_v2.CellGlobalId_NrCgi{NrCgi: intToNRCGI(request.CellId)}}))
+	log.Infof("Received PCI Cell Request %v", request)
+	cell, err := s.store.Get(ctx, request.CellId)
 	if err != nil {
 		return nil, err
 	}
-	return &pciapi.GetCellResponse{Cell: cellPciToPciCell(cell.Key, cell.Value.(types.CellPCI))}, nil
+	return &pciapi.GetCellResponse{Cell: cellPciToPciCell(cell.Key, cell.Value)}, nil
 }
 
 func (s *Server) GetCells(ctx context.Context, request *pciapi.GetCellsRequest) (*pciapi.GetCellsResponse, error) {
+	log.Infof("Received PCI Cells Request %v", request)
 	output := make([]*pciapi.PciCell, 0)
-	ch := make(chan *metrics.Entry)
+	ch := make(chan *metrics.Entry, 1024)
 	err := s.store.Entries(ctx, ch)
 	if err != nil {
 		return nil, err
 	}
 	for c := range ch {
-		cell, ok := c.Value.(types.CellPCI)
-		if ok {
-			output = append(output, cellPciToPciCell(c.Key, cell))
-		}
+		output = append(output, cellPciToPciCell(c.Key, c.Value))
 	}
 	return &pciapi.GetCellsResponse{Cells: output}, nil
-}
-
-// converting from uint64 to NRCGI's
-func intToNRCGI(ncgi uint64) *e2sm_rc_pre_v2.Nrcgi {
-	plmnid := uint32(ransim_types.GetPlmnID(ncgi))
-	bitmask := 0xFF
-	nci := uint64(ransim_types.GetNCI(ransim_types.NCGI(ncgi)))
-
-	return &e2sm_rc_pre_v2.Nrcgi{
-		PLmnIdentity: &e2sm_rc_pre_v2.PlmnIdentity{
-			Value: []byte{byte((plmnid >> 0) & uint32(bitmask)), byte((plmnid >> 8) & uint32(bitmask)), byte((plmnid >> 16) & uint32(bitmask))},
-		},
-		NRcellIdentity: &e2sm_rc_pre_v2.NrcellIdentity{
-			Value: &e2sm_rc_pre_v2.BitString{
-				Value: nci,
-				Len:   36,
-			},
-		},
-	}
 }
 
 // convert from NRCGI to uint64

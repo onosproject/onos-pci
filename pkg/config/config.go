@@ -8,12 +8,12 @@ import (
 	"context"
 	"os"
 
+	"github.com/onosproject/onos-ric-sdk-go/pkg/config/event"
 	configurable "github.com/onosproject/onos-ric-sdk-go/pkg/config/registry"
 
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-pci/pkg/utils"
 	app "github.com/onosproject/onos-ric-sdk-go/pkg/config/app/default"
-	"github.com/onosproject/onos-ric-sdk-go/pkg/config/event"
 	configutils "github.com/onosproject/onos-ric-sdk-go/pkg/config/utils"
 )
 
