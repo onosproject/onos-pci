@@ -39,10 +39,10 @@ func (s *TestSuite) SetupTestSuite(c *input.Context) error {
 	}
 
 	sdran, err := utils.CreateSdranRelease(c)
-	s.sdran = sdran
 	if err != nil {
 		return err
 	}
+	s.sdran = sdran
 	sdran.Set("ran-simulator.pci.metricName", "metrics").
 		Set("ran-simulator.pci.modelName", "scale-50-150")
 	return sdran.Install(true)
