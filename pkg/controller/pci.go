@@ -14,7 +14,6 @@ import (
 	"github.com/onosproject/onos-pci/pkg/types"
 	"github.com/onosproject/onos-pci/pkg/utils/decode"
 	"github.com/onosproject/onos-pci/pkg/utils/parse"
-	// "github.com/onosproject/onos-ric-sdk-go/pkg/config/event"
 )
 
 // SearchDepth indicates how deep it will search in metrics store

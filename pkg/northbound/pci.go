@@ -51,6 +51,7 @@ type Server struct {
 
 // GetNumConflicts returns how many conflicts occur for a given cell or cells in total
 func (s *Server) GetConflicts(ctx context.Context, request *pciapi.GetConflictsRequest) (*pciapi.GetConflictsResponse, error) {
+	log.Infof("Received PCI Conflicts Request %v", request)
 	conflicts := make([]*pciapi.PciCell, 0)
 	if request.CellId != 0 {
 		cell, err := s.store.Get(ctx, metrics.NewKey(&e2sm_rc_pre_v2.CellGlobalId{CellGlobalId: &e2sm_rc_pre_v2.CellGlobalId_NrCgi{NrCgi: intToNRCGI(request.CellId)}}))
@@ -85,6 +86,7 @@ func (s *Server) GetConflicts(ctx context.Context, request *pciapi.GetConflictsR
 }
 
 func (s *Server) GetCell(ctx context.Context, request *pciapi.GetCellRequest) (*pciapi.GetCellResponse, error) {
+	log.Infof("Received PCI Cell Request %v", request)
 	cell, err := s.store.Get(ctx, metrics.NewKey(&e2sm_rc_pre_v2.CellGlobalId{CellGlobalId: &e2sm_rc_pre_v2.CellGlobalId_NrCgi{NrCgi: intToNRCGI(request.CellId)}}))
 	if err != nil {
 		return nil, err
@@ -93,6 +95,7 @@ func (s *Server) GetCell(ctx context.Context, request *pciapi.GetCellRequest) (*
 }
 
 func (s *Server) GetCells(ctx context.Context, request *pciapi.GetCellsRequest) (*pciapi.GetCellsResponse, error) {
+	log.Infof("Received PCI Cells Request %v", request)
 	output := make([]*pciapi.PciCell, 0)
 	ch := make(chan *metrics.Entry, 1024)
 	err := s.store.Entries(ctx, ch)
@@ -106,9 +109,8 @@ func (s *Server) GetCells(ctx context.Context, request *pciapi.GetCellsRequest) 
 }
 
 // converting from uint64 to NRCGI's
-// ! FIX ME, only creates 5g (TODO), also
+// ! FIX ME, only creates 5g (TODO)
 func intToNRCGI(ncgi uint64) *e2sm_rc_pre_v2.Nrcgi {
-	log.Infof("INT CONVERTING FROM %x", ncgi)
 	plmnid := uint32(ransim_types.GetPlmnID(ncgi))
 	bitmask := uint32(0xFF)
 	nci := uint64(ransim_types.GetNCI(ransim_types.NCGI(ncgi)))
@@ -124,19 +126,7 @@ func intToNRCGI(ncgi uint64) *e2sm_rc_pre_v2.Nrcgi {
 			},
 		},
 	}
-	log.Infof("INT CONVERTED TO %v", temp)
 	return temp
-	// return &e2sm_rc_pre_v2.Nrcgi{
-	// 	PLmnIdentity: &e2sm_rc_pre_v2.PlmnIdentity{
-	// 		Value: []byte{byte((plmnid >> 16) & uint32(bitmask)), byte((plmnid >> 8) & uint32(bitmask)), byte((plmnid >> 0) & uint32(bitmask))},
-	// 	},
-	// 	NRcellIdentity: &e2sm_rc_pre_v2.NrcellIdentity{
-	// 		Value: &e2sm_rc_pre_v2.BitString{
-	// 			Value: nci,
-	// 			Len:   36,
-	// 		},
-	// 	},
-	// }
 }
 
 // convert from NRCGI to uint64
@@ -145,7 +135,6 @@ func nrcgiToInt(nrcgi *e2sm_rc_pre_v2.Nrcgi) uint64 {
 	plmnid := uint32(array[0])<<0 | uint32(array[1])<<8 | uint32(array[2])<<16
 	nci := nrcgi.NRcellIdentity.Value.Value
 
-	log.Infof("NRCGI CONVERTING FROM %v", nrcgi)
 	return uint64(plmnid)<<36 | nci
 }
 

@@ -12,6 +12,8 @@ import (
 
 	e2smrcpre "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
 
+	ransim_types "github.com/onosproject/onos-api/go/onos/ransim/types"
+
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 
 	"github.com/google/uuid"
@@ -23,7 +25,7 @@ var log = logging.GetLogger("store", "metrics")
 
 // Store kpm metrics store interface
 type Store interface {
-	Put(ctx context.Context, key uint64, cgi *e2smrcpre.CellGlobalId, value types.CellPCI) (*Entry, error)
+	Put(ctx context.Context, key uint64, value types.CellPCI) (*Entry, error)
 
 	// Get gets a metric store entry based on a given key
 	Get(ctx context.Context, key uint64) (*Entry, error)
@@ -83,12 +85,16 @@ func (s *store) Delete(ctx context.Context, key uint64) error {
 
 }
 
-func (s *store) Put(ctx context.Context, key uint64, cgi *e2smrcpre.CellGlobalId, value types.CellPCI) (*Entry, error) {
+func (s *store) Put(ctx context.Context, key uint64, value types.CellPCI) (*Entry, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	entry := &Entry{
 		Key: Key{
-			CellGlobalID: cgi,
+			CellGlobalID: &e2smrcpre.CellGlobalId{
+				CellGlobalId: &e2smrcpre.CellGlobalId_NrCgi{
+					NrCgi: intToNRCGI(key),
+				},
+			},
 		},
 		Value: value,
 	}
@@ -172,6 +178,25 @@ func nrcgiToInt(nrcgi *e2smrcpre.Nrcgi) uint64 {
 	plmnid := uint32(array[0])<<0 | uint32(array[1])<<8 | uint32(array[2])<<16
 	nci := nrcgi.NRcellIdentity.Value.Value
 	return uint64(plmnid)<<36 | nci
+}
+
+func intToNRCGI(ncgi uint64) *e2smrcpre.Nrcgi {
+	plmnid := uint32(ransim_types.GetPlmnID(ncgi))
+	bitmask := uint32(0xFF)
+	nci := uint64(ransim_types.GetNCI(ransim_types.NCGI(ncgi)))
+
+	temp := &e2smrcpre.Nrcgi{
+		PLmnIdentity: &e2smrcpre.PlmnIdentity{
+			Value: []byte{byte((plmnid >> 0) & bitmask), byte((plmnid >> 8) & bitmask), byte((plmnid >> 16) & bitmask)},
+		},
+		NRcellIdentity: &e2smrcpre.NrcellIdentity{
+			Value: &e2smrcpre.BitString{
+				Value: nci,
+				Len:   36,
+			},
+		},
+	}
+	return temp
 }
 
 var _ Store = &store{}
