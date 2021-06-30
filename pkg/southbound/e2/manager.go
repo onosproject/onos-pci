@@ -11,8 +11,6 @@ import (
 
 	"github.com/onosproject/onos-pci/pkg/monitoring"
 
-	"github.com/onosproject/onos-pci/pkg/types"
-
 	"github.com/onosproject/onos-pci/pkg/utils/control"
 
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
@@ -24,7 +22,6 @@ import (
 	e2api "github.com/onosproject/onos-api/go/onos/e2t/e2/v1beta1"
 
 	"github.com/onosproject/onos-pci/pkg/broker"
-	storeevent "github.com/onosproject/onos-pci/pkg/store/event"
 
 	appConfig "github.com/onosproject/onos-pci/pkg/config"
 
@@ -262,20 +259,20 @@ func (m *Manager) watchE2Connections(ctx context.Context) error {
 }
 
 func (m *Manager) watchPCIChanges(ctx context.Context, e2nodeID topoapi.ID) {
-	ch := make(chan storeevent.Event)
+	ch := make(chan metrics.Event)
 	err := m.metricStore.Watch(ctx, ch)
 	if err != nil {
 		return
 	}
 
 	for e := range ch {
-		if e.Type == metrics.UpdatedPCI && e2nodeID == e.Value.(*metrics.Entry).Value.(types.CellPCI).E2NodeID {
-			key := e.Key.(metrics.Key)
+		if e.Type == metrics.UpdatedPCI && e2nodeID == e.Value.Value.E2NodeID {
+			key := e.Value.Key
 			header, err := control.CreateRcControlHeader(key.CellGlobalID, 10)
 			if err != nil {
 				log.Warn(err)
 			}
-			newPci := e.Value.(*metrics.Entry).Value.(types.CellPCI).Metric.PCI
+			newPci := e.Value.Value.Metric.PCI
 			log.Debugf("send control message for key: %v / pci: %v", e.Key, newPci)
 			payload, err := control.CreateRcControlMessage(10, "pci", newPci)
 			if err != nil {

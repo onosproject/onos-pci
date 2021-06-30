@@ -6,6 +6,7 @@ package metrics
 
 import (
 	e2smrcpre "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
+	"github.com/onosproject/onos-pci/pkg/types"
 )
 
 // Key metric key
@@ -16,7 +17,7 @@ type Key struct {
 // Entry entry of metrics store
 type Entry struct {
 	Key   Key
-	Value interface{}
+	Value types.CellPCI
 }
 
 // MetricEvent a metric event
@@ -33,7 +34,6 @@ const (
 	UpdatedPCI
 	// Deleted deleted measurement event
 	Deleted
-
 )
 
 func (e MetricEvent) String() string {

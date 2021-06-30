@@ -8,6 +8,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"time"
+
 	types2 "github.com/gogo/protobuf/types"
 	"github.com/onosproject/onos-api/go/onos/uenib"
 	e2sm_rc_pre_v2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
@@ -15,14 +17,11 @@ import (
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-lib-go/pkg/southbound"
 	"github.com/onosproject/onos-pci/pkg/rnib"
-	"github.com/onosproject/onos-pci/pkg/store/event"
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
-	"github.com/onosproject/onos-pci/pkg/types"
 	"github.com/onosproject/onos-pci/pkg/utils/decode"
 	"github.com/onosproject/onos-pci/pkg/utils/parse"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"time"
 )
 
 const (
@@ -93,7 +92,7 @@ func (c *Client) Run(ctx context.Context) {
 }
 
 func (c *Client) watchMetricStore(ctx context.Context) {
-	ch := make(chan event.Event)
+	ch := make(chan metrics.Event)
 	err := c.metricsStore.Watch(ctx, ch)
 	if err != nil {
 		log.Error(err)
@@ -101,7 +100,7 @@ func (c *Client) watchMetricStore(ctx context.Context) {
 	for e := range ch {
 		// new indication message arrives
 		if e.Type == metrics.Created {
-			err := c.storeNeighborCellList(ctx, *e.Value.(*metrics.Entry))
+			err := c.storeNeighborCellList(ctx, e.Value)
 			if err != nil {
 				log.Errorf("Error happened when storing neighbors to UENIB: %v", err)
 			}
@@ -125,7 +124,7 @@ func (c *Client) storeNeighborCellList(ctx context.Context, entry metrics.Entry)
 
 func (c *Client) createUENIBUpdateRequest(entry metrics.Entry) (*uenib.UpdateUERequest, error) {
 	entryKey := entry.Key
-	entryValue := entry.Value.(types.CellPCI)
+	entryValue := entry.Value
 	plmnIDByte, cid, cType, err := parse.ParseMetricKey(entryKey.CellGlobalID)
 	if err != nil {
 		return nil, err

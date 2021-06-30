@@ -16,10 +16,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/onosproject/onos-pci/pkg/store/watcher"
-
-	"github.com/onosproject/onos-pci/pkg/store/event"
-
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 )
 
@@ -27,38 +23,38 @@ var log = logging.GetLogger("store", "metrics")
 
 // Store kpm metrics store interface
 type Store interface {
-	Put(ctx context.Context, key Key, value interface{}) (*Entry, error)
+	Put(ctx context.Context, key uint64, cgi *e2smrcpre.CellGlobalId, value types.CellPCI) (*Entry, error)
 
 	// Get gets a metric store entry based on a given key
-	Get(ctx context.Context, key Key) (*Entry, error)
+	Get(ctx context.Context, key uint64) (*Entry, error)
 
 	// Update updates an existing entry in the store
-	Update(ctx context.Context, entry *Entry) error
+	Update(ctx context.Context, key uint64, entry *Entry) error
 
 	// UpdatePci only updates pci in the existing entry
-	UpdatePci(ctx context.Context, key Key, pci int32) error
+	UpdatePci(ctx context.Context, key uint64, pci int32) error
 
 	// Delete deletes an entry based on a given key
-	Delete(ctx context.Context, key Key) error
+	Delete(ctx context.Context, key uint64) error
 
 	// Entries list all of the metric store entries
 	Entries(ctx context.Context, ch chan *Entry) error
 
 	// Watch measurement store changes
-	Watch(ctx context.Context, ch chan event.Event) error
+	Watch(ctx context.Context, ch chan Event) error
 }
 
 type store struct {
-	metrics  map[Key]*Entry
+	metrics  map[uint64]*Entry
 	mu       sync.RWMutex
-	watchers *watcher.Watchers
+	watchers *Watchers
 }
 
 // NewStore creates new store
 func NewStore() Store {
-	watchers := watcher.NewWatchers()
+	watchers := NewWatchers()
 	return &store{
-		metrics:  make(map[Key]*Entry),
+		metrics:  make(map[uint64]*Entry),
 		watchers: watchers,
 	}
 }
@@ -78,7 +74,7 @@ func (s *store) Entries(ctx context.Context, ch chan *Entry) error {
 	return nil
 }
 
-func (s *store) Delete(ctx context.Context, key Key) error {
+func (s *store) Delete(ctx context.Context, key uint64) error {
 	// TODO check the key and make sure it is not empty
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -87,24 +83,26 @@ func (s *store) Delete(ctx context.Context, key Key) error {
 
 }
 
-func (s *store) Put(ctx context.Context, key Key, value interface{}) (*Entry, error) {
+func (s *store) Put(ctx context.Context, key uint64, cgi *e2smrcpre.CellGlobalId, value types.CellPCI) (*Entry, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	entry := &Entry{
-		Key:   key,
+		Key: Key{
+			CellGlobalID: cgi,
+		},
 		Value: value,
 	}
 	s.metrics[key] = entry
-	s.watchers.Send(event.Event{
+	s.watchers.Send(Event{
 		Key:   key,
-		Value: entry,
+		Value: *entry,
 		Type:  Created,
 	})
 	return entry, nil
 
 }
 
-func (s *store) Get(ctx context.Context, key Key) (*Entry, error) {
+func (s *store) Get(ctx context.Context, key uint64) (*Entry, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if v, ok := s.metrics[key]; ok {
@@ -113,7 +111,7 @@ func (s *store) Get(ctx context.Context, key Key) (*Entry, error) {
 	return nil, errors.New(errors.NotFound, "the measurement entry does not exist")
 }
 
-func (s *store) Watch(ctx context.Context, ch chan event.Event) error {
+func (s *store) Watch(ctx context.Context, ch chan Event) error {
 	id := uuid.New()
 	err := s.watchers.AddWatcher(id, ch)
 	if err != nil {
@@ -132,14 +130,14 @@ func (s *store) Watch(ctx context.Context, ch chan event.Event) error {
 	return nil
 }
 
-func (s *store) Update(ctx context.Context, entry *Entry) error {
+func (s *store) Update(ctx context.Context, key uint64, entry *Entry) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if _, ok := s.metrics[entry.Key]; ok {
-		s.metrics[entry.Key] = entry
-		s.watchers.Send(event.Event{
-			Key:   entry.Key,
-			Value: entry,
+	if _, ok := s.metrics[key]; ok {
+		s.metrics[key] = entry
+		s.watchers.Send(Event{
+			Key:   key,
+			Value: *entry,
 			Type:  Updated,
 		})
 
@@ -148,14 +146,14 @@ func (s *store) Update(ctx context.Context, entry *Entry) error {
 	return errors.New(errors.NotFound, "the entry does not exist")
 }
 
-func (s *store) UpdatePci(ctx context.Context, key Key, pci int32) error {
+func (s *store) UpdatePci(ctx context.Context, key uint64, pci int32) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.metrics[key]; ok {
-		s.metrics[key].Value.(types.CellPCI).Metric.PCI = pci
-		s.watchers.Send(event.Event{
+		s.metrics[key].Value.Metric.PCI = pci
+		s.watchers.Send(Event{
 			Key:   key,
-			Value: s.metrics[key],
+			Value: *s.metrics[key],
 			Type:  UpdatedPCI,
 		})
 		return nil
@@ -164,10 +162,16 @@ func (s *store) UpdatePci(ctx context.Context, key Key, pci int32) error {
 }
 
 // NewKey creates a new measurements map key
-func NewKey(cellGlobalID *e2smrcpre.CellGlobalId) Key {
-	return Key{
-		CellGlobalID: cellGlobalID,
-	}
+func NewKey(cellGlobalID *e2smrcpre.CellGlobalId) uint64 {
+	return nrcgiToInt(cellGlobalID.GetNrCgi())
+}
+
+// convert from NRCGI to uint64
+func nrcgiToInt(nrcgi *e2smrcpre.Nrcgi) uint64 {
+	array := nrcgi.PLmnIdentity.Value
+	plmnid := uint32(array[0])<<0 | uint32(array[1])<<8 | uint32(array[2])<<16
+	nci := nrcgi.NRcellIdentity.Value.Value
+	return uint64(plmnid)<<36 | nci
 }
 
 var _ Store = &store{}

@@ -10,11 +10,11 @@ import (
 	e2sm_rc_pre_v2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
-	"github.com/onosproject/onos-pci/pkg/store/event"
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
 	"github.com/onosproject/onos-pci/pkg/types"
 	"github.com/onosproject/onos-pci/pkg/utils/decode"
 	"github.com/onosproject/onos-pci/pkg/utils/parse"
+	// "github.com/onosproject/onos-ric-sdk-go/pkg/config/event"
 )
 
 // SearchDepth indicates how deep it will search in metrics store
@@ -38,7 +38,7 @@ func (p *PciController) Run(ctx context.Context) {
 }
 
 func (p *PciController) resolvePciConflict(ctx context.Context) {
-	ch := make(chan event.Event)
+	ch := make(chan metrics.Event)
 	err := p.metricStore.Watch(ctx, ch)
 	if err != nil {
 		log.Error(err)
@@ -49,15 +49,15 @@ func (p *PciController) resolvePciConflict(ctx context.Context) {
 			log.Debugf("new event indication message key: %v / value: %v / event type: %v",
 				e.Key, e.Value, e.Type)
 
-			pci, changed, err := p.getAvailablePci(ctx, e.Value.(*metrics.Entry))
+			pci, changed, err := p.getAvailablePci(ctx, &e.Value)
 			if err != nil {
 				log.Errorf("skip pci logic for event %v due to %v", e, err)
 				continue
 			}
 
 			if changed {
-				log.Debugf("NewPCI for %v: %v", e.Value.(*metrics.Entry).Key, pci)
-				err := p.metricStore.UpdatePci(ctx, e.Value.(*metrics.Entry).Key, pci)
+				log.Debugf("NewPCI for %v: %v", e.Value.Key, pci)
+				err := p.metricStore.UpdatePci(ctx, metrics.NewKey(e.Value.Key.CellGlobalID), pci)
 				if err != nil {
 					log.Error(err)
 				}
@@ -67,7 +67,7 @@ func (p *PciController) resolvePciConflict(ctx context.Context) {
 }
 
 func (p *PciController) getAvailablePci(ctx context.Context, entry *metrics.Entry) (int32, bool, error) {
-	pciMap, err := p.getEmptyPciMap(entry.Value.(types.CellPCI).PCIPoolList)
+	pciMap, err := p.getEmptyPciMap(entry.Value.PCIPoolList)
 	if err != nil {
 		return 0, false, err
 	}
@@ -79,7 +79,7 @@ func (p *PciController) getAvailablePci(ctx context.Context, entry *metrics.Entr
 	}
 
 	// if the PCI that entry has is not occupied by the other cells in the scope (depth), just use it
-	if !pciMap[entry.Value.(types.CellPCI).Metric.PCI] {
+	if !pciMap[entry.Value.Metric.PCI] {
 		return 0, false, nil
 	}
 
@@ -114,7 +114,7 @@ func (p *PciController) neighborTraversal(ctx context.Context, rootKey metrics.K
 		return err
 	}
 
-	for _, n := range entry.Value.(types.CellPCI).Neighbors {
+	for _, n := range entry.Value.Neighbors {
 		// is CGI root key equal to neighbor CGI? - if so, skip; otherwise, mark pciMap as false
 		if !p.isCGIEqual(rootKey.CellGlobalID, n.GetCgi()) {
 			neighborEntry := p.getEntryWithNeighborCGI(ctx, n.GetCgi())
@@ -122,7 +122,7 @@ func (p *PciController) neighborTraversal(ctx context.Context, rootKey metrics.K
 				// if neighbor metric is in store - search store first:
 				// neighbor metric has more recent PCI than the neighbors field in entry,
 				// because this controller updates PCI in neighbor metric after sending RC-PRE control message
-				pciMap[neighborEntry.Value.(types.CellPCI).Metric.PCI] = true
+				pciMap[neighborEntry.Value.Metric.PCI] = true
 				err = p.neighborTraversal(ctx, rootKey, neighborEntry, cDepth+1, pciMap)
 				if err != nil {
 					log.Error(err)

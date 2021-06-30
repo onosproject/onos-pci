@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: LicenseRef-ONF-Member-1.0
 
-package event
+package metrics
 
 // Event store event data structure
 type Event struct {
-	Key   interface{}
-	Value interface{}
+	Key   uint64
+	Value Entry
 	Type  interface{}
 }
