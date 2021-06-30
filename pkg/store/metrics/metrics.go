@@ -8,8 +8,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/onosproject/onos-pci/pkg/types"
-
 	e2smrcpre "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
 
 	ransim_types "github.com/onosproject/onos-api/go/onos/ransim/types"
@@ -25,7 +23,7 @@ var log = logging.GetLogger("store", "metrics")
 
 // Store kpm metrics store interface
 type Store interface {
-	Put(ctx context.Context, key uint64, value types.CellPCI) (*Entry, error)
+	Put(ctx context.Context, key uint64, entry Entry) (*Entry, error)
 
 	// Get gets a metric store entry based on a given key
 	Get(ctx context.Context, key uint64) (*Entry, error)
@@ -85,26 +83,16 @@ func (s *store) Delete(ctx context.Context, key uint64) error {
 
 }
 
-func (s *store) Put(ctx context.Context, key uint64, value types.CellPCI) (*Entry, error) {
+func (s *store) Put(ctx context.Context, key uint64, entry Entry) (*Entry, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	entry := &Entry{
-		Key: Key{
-			CellGlobalID: &e2smrcpre.CellGlobalId{
-				CellGlobalId: &e2smrcpre.CellGlobalId_NrCgi{
-					NrCgi: intToNRCGI(key),
-				},
-			},
-		},
-		Value: value,
-	}
-	s.metrics[key] = entry
+	s.metrics[key] = &entry
 	s.watchers.Send(Event{
 		Key:   key,
-		Value: *entry,
+		Value: entry,
 		Type:  Created,
 	})
-	return entry, nil
+	return &entry, nil
 
 }
 

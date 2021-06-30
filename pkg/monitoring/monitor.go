@@ -87,13 +87,18 @@ func (m *Monitor) processIndicationFormat1(ctx context.Context, indication e2api
 
 	pciPoolList = append(pciPoolList, pciPool)
 	cellKey := metrics.NewKey(cellCGI)
-	_, err = m.metricStore.Put(ctx, cellKey, types.CellPCI{
-		E2NodeID: nodeID,
-		Metric: &types.CellMetric{
-			PCI: cellPCI,
+	_, err = m.metricStore.Put(ctx, cellKey, metrics.Entry{
+		Key: metrics.Key{
+			CellGlobalID: cellCGI,
 		},
-		Neighbors:   messageFormat1.GetNeighbors(),
-		PCIPoolList: pciPoolList,
+		Value: types.CellPCI{
+			E2NodeID: nodeID,
+			Metric: &types.CellMetric{
+				PCI: cellPCI,
+			},
+			Neighbors:   messageFormat1.GetNeighbors(),
+			PCIPoolList: pciPoolList,
+		},
 	})
 	if err != nil {
 		return err
