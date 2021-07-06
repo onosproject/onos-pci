@@ -39,12 +39,12 @@ func (s *TestSuite) SetupTestSuite(c *input.Context) error {
 	}
 
 	sdran, err := utils.CreateSdranRelease(c)
-	s.sdran = sdran
-	sdran.Set("ran-simulator.pci.metricName", "three-cell-metrics").
-		Set("ran-simulator.pci.modelName", "three-cell-model")
 	if err != nil {
 		return err
 	}
+	s.sdran = sdran
+	sdran.Set("ran-simulator.pci.metricName", "three-cell-metrics").
+		Set("ran-simulator.pci.modelName", "three-cell-model")
 	return sdran.Install(true)
 }
 
