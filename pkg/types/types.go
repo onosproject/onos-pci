@@ -22,9 +22,11 @@ type PCIPool struct {
 
 // CellMetric is the metric struct which has EARFCN-DL, size, and PCI of a cell
 type CellMetric struct {
-	DlEARFCN int32
-	CellSize e2smrcpreies.CellSize
-	PCI      int32
+	DlEARFCN          int32
+	CellSize          e2smrcpreies.CellSize
+	PCI               int32
+	PreviousPCI       int32
+	ResolvedConflicts uint32
 }
 
 // CellPCI is the PCI-NRT information

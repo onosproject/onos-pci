@@ -77,11 +77,33 @@ func (s *Server) GetConflicts(ctx context.Context, request *pciapi.GetConflictsR
 			for i := range cell.Value.Neighbors {
 				if pci == cell.Value.Neighbors[i].Pci.Value {
 					conflicts = append(conflicts, cellPciToPciCell(cell.Key, cell.Value))
+					break
 				}
 			}
 		}
 	}
 	return &pciapi.GetConflictsResponse{Cells: conflicts}, nil
+}
+
+func (s *Server) GetResolvedConflicts(ctx context.Context, request *pciapi.GetResolvedConflictsRequest) (*pciapi.GetResolvedConflictsResponse, error) {
+	conflicts := make([]*pciapi.CellResolution, 0)
+
+	ch := make(chan *metrics.Entry, 1024)
+	err := s.store.Entries(ctx, ch)
+	if err != nil {
+		return nil, err
+	}
+	for cell := range ch {
+		if cell.Value.Metric.ResolvedConflicts != 0 {
+			conflicts = append(conflicts, &pciapi.CellResolution{
+				Id:                nrcgiToInt(cell.Key.CellGlobalID.GetNrCgi()),
+				ResolvedPci:       uint32(cell.Value.Metric.PCI),
+				OriginalPci:       uint32(cell.Value.Metric.PreviousPCI),
+				ResolvedConflicts: cell.Value.Metric.ResolvedConflicts,
+			})
+		}
+	}
+	return &pciapi.GetResolvedConflictsResponse{Cells: conflicts}, nil
 }
 
 func (s *Server) GetCell(ctx context.Context, request *pciapi.GetCellRequest) (*pciapi.GetCellResponse, error) {

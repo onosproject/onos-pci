@@ -84,6 +84,14 @@ func (s *store) Delete(ctx context.Context, key uint64) error {
 func (s *store) Put(ctx context.Context, key uint64, entry Entry) (*Entry, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	// preserve previous values if they exist
+	v, ok := s.metrics[key]
+	if ok && v != nil {
+		entry.Value.Metric.PreviousPCI = v.Value.Metric.PreviousPCI
+		entry.Value.Metric.ResolvedConflicts = v.Value.Metric.ResolvedConflicts
+	}
+
 	s.metrics[key] = &entry
 	s.watchers.Send(Event{
 		Key:   key,
@@ -142,10 +150,13 @@ func (s *store) UpdatePci(ctx context.Context, key uint64, pci int32) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.metrics[key]; ok {
-		s.metrics[key].Value.Metric.PCI = pci
+		v := s.metrics[key]
+		v.Value.Metric.ResolvedConflicts++
+		v.Value.Metric.PreviousPCI = v.Value.Metric.PCI
+		v.Value.Metric.PCI = pci
 		s.watchers.Send(Event{
 			Key:   key,
-			Value: *s.metrics[key],
+			Value: *v,
 			Type:  UpdatedPCI,
 		})
 		return nil
