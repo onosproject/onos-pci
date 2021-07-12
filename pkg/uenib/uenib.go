@@ -132,7 +132,7 @@ func (c *Client) createUENIBUpdateRequest(entry metrics.Entry) (*uenib.UpdateUER
 	plmnID := decode.PlmnIdToUint32(plmnIDByte)
 	nodeID := entryValue.E2NodeID
 
-	uenibKey := fmt.Sprintf("%s:%d:%d:%s", nodeID, plmnID, cid, cType.String())
+	uenibKey := fmt.Sprintf("%s:%x:%x:%s", nodeID, plmnID, cid, cType.String())
 	uenibValue, err := c.encodeNeighborListToString(entryValue.Neighbors)
 	if err != nil {
 		return nil, err
@@ -165,10 +165,10 @@ func (c *Client) encodeNeighborListToString(neighbors []*e2sm_rc_pre_v2.Nrt) (st
 		}
 		nPlmnID := decode.PlmnIdToUint32(nPlmnIDByte)
 		if i == 0 {
-			encNeighbors = fmt.Sprintf("%d:%d:%s", nPlmnID, nCid, nCType.String())
+			encNeighbors = fmt.Sprintf("%x:%d:%s", nPlmnID, nCid, nCType.String())
 			continue
 		}
-		encNeighbors = encNeighbors + "," + fmt.Sprintf("%d:%d:%s", nPlmnID, nCid, nCType.String())
+		encNeighbors = encNeighbors + "," + fmt.Sprintf("%x:%x:%s", nPlmnID, nCid, nCType.String())
 	}
 
 	return encNeighbors, nil

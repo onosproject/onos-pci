@@ -3,7 +3,6 @@ module github.com/onosproject/onos-pci
 go 1.14
 
 require (
-	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.0.0
 	github.com/envoyproxy/protoc-gen-validate v0.6.1 // indirect
 	github.com/gogo/protobuf v1.3.2
