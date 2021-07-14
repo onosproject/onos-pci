@@ -165,7 +165,7 @@ func (c *Client) encodeNeighborListToString(neighbors []*e2sm_rc_pre_v2.Nrt) (st
 		}
 		nPlmnID := decode.PlmnIdToUint32(nPlmnIDByte)
 		if i == 0 {
-			encNeighbors = fmt.Sprintf("%x:%d:%s", nPlmnID, nCid, nCType.String())
+			encNeighbors = fmt.Sprintf("%x:%x:%s", nPlmnID, nCid, nCType.String())
 			continue
 		}
 		encNeighbors = encNeighbors + "," + fmt.Sprintf("%x:%x:%s", nPlmnID, nCid, nCType.String())
