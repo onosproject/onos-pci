@@ -6,6 +6,7 @@ package metrics
 
 import (
 	"context"
+	"github.com/onosproject/onos-pci/pkg/utils/parse"
 	"sync"
 
 	e2smrcpre "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
@@ -174,7 +175,7 @@ func nrcgiToInt(nrcgi *e2smrcpre.Nrcgi) uint64 {
 	array := nrcgi.PLmnIdentity.Value
 	plmnid := uint32(array[0])<<0 | uint32(array[1])<<8 | uint32(array[2])<<16
 	nci := nrcgi.NRcellIdentity.Value.Value
-	return uint64(plmnid)<<36 | nci
+	return uint64(plmnid)<<36 | parse.BitStringToUint64(nci, int(nrcgi.NRcellIdentity.Value.Len))
 }
 
 var _ Store = &store{}
