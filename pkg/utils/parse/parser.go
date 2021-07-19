@@ -26,12 +26,12 @@ func ParseMetricKey(e *e2smrcprev2.CellGlobalId) ([]byte, uint64, CGIType, error
 		return nil, 0, CGITypeUnknown, errors.NewNotFound("CellGlobalID is not found in entry Key field")
 	} else if e.GetNrCgi() != nil {
 		return e.GetNrCgi().GetPLmnIdentity().GetValue(),
-			e.GetNrCgi().GetNRcellIdentity().GetValue().Value,
+			BitStringToUint64(e.GetNrCgi().GetNRcellIdentity().GetValue().Value, int(e.GetNrCgi().GetNRcellIdentity().GetValue().Len)),
 			CGITypeNrCGI,
 			nil
 	} else if e.GetEUtraCgi() != nil {
 		return e.GetEUtraCgi().GetPLmnIdentity().GetValue(),
-			e.GetEUtraCgi().GetEUtracellIdentity().GetValue().Value,
+			BitStringToUint64(e.GetEUtraCgi().GetEUtracellIdentity().GetValue().Value, int(e.GetEUtraCgi().GetEUtracellIdentity().GetValue().Len)),
 			CGITypeECGI,
 			nil
 	}
@@ -41,9 +41,20 @@ func ParseMetricKey(e *e2smrcprev2.CellGlobalId) ([]byte, uint64, CGIType, error
 func GetCellID(cellGlobalID *e2smrcprev2.CellGlobalId) (uint64, error) {
 	switch v := cellGlobalID.GetCellGlobalId().(type) {
 	case *e2smrcprev2.CellGlobalId_EUtraCgi:
-		return v.EUtraCgi.EUtracellIdentity.Value.Value, nil
+		return BitStringToUint64(v.EUtraCgi.EUtracellIdentity.Value.Value, int(v.EUtraCgi.EUtracellIdentity.Value.Len)), nil
 	case *e2smrcprev2.CellGlobalId_NrCgi:
-		return v.NrCgi.NRcellIdentity.Value.Value, nil
+		return BitStringToUint64(v.NrCgi.NRcellIdentity.Value.Value, int(v.NrCgi.NRcellIdentity.Value.Len)), nil
 	}
 	return 0, errors.New(errors.NotSupported, "CGI should be one of NrCGI and ECGI")
+}
+
+func BitStringToUint64(bitString []byte, bitCount int) uint64 {
+	unusedBits := 8 - bitCount%8
+	var result uint64 = 0
+	for i, b := range bitString {
+		result += (uint64(b) << ((len(bitString)-i-1) * 8))
+
+	}
+
+	return result >> unusedBits
 }
