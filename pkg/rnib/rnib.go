@@ -44,7 +44,7 @@ func (c *Client) SetCellPCI(ctx context.Context, cellID topoapi.ID, pci uint32) 
 		return err
 	}
 
-	if object != nil && object.GetEntity().GetKindID() == topoapi.ID(topoapi.RANEntityKinds_E2CELL.String()) {
+	if object != nil && object.GetEntity().GetKindID() == topoapi.E2CELL {
 		cellObject := &topoapi.E2Cell{}
 		object.GetAspect(cellObject)
 		cellObject.PCI = pci
