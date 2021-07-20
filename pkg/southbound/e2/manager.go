@@ -7,7 +7,6 @@ package e2
 import (
 	"context"
 	"strings"
-	"time"
 
 	"github.com/onosproject/onos-pci/pkg/monitoring"
 
@@ -18,7 +17,6 @@ import (
 	prototypes "github.com/gogo/protobuf/types"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 
-	"github.com/cenkalti/backoff/v4"
 	e2api "github.com/onosproject/onos-api/go/onos/e2t/e2/v1beta1"
 
 	"github.com/onosproject/onos-pci/pkg/broker"
@@ -38,21 +36,6 @@ var log = logging.GetLogger("e2", "subscription", "manager")
 const (
 	oid = "1.3.6.1.4.1.53148.1.2.2.100"
 )
-
-const (
-	backoffInterval = 10 * time.Millisecond
-	maxBackoffTime  = 5 * time.Second
-)
-
-func newExpBackoff() *backoff.ExponentialBackOff {
-	b := backoff.NewExponentialBackOff()
-	b.InitialInterval = backoffInterval
-	// MaxInterval caps the RetryInterval
-	b.MaxInterval = maxBackoffTime
-	// Never stops retrying
-	b.MaxElapsedTime = 0
-	return b
-}
 
 // Node e2 manager interface
 type Node interface {
@@ -214,17 +197,7 @@ func (m *Manager) createSubscription(ctx context.Context, e2nodeID topoapi.ID) e
 }
 
 func (m *Manager) newSubscription(ctx context.Context, e2NodeID topoapi.ID) error {
-	// TODO revisit this after migrating to use new E2 sdk, it should be the responsibility of the SDK to retry on this call
-	count := 0
-	notifier := func(err error, t time.Duration) {
-		count++
-		log.Infof("Retrying, failed to create subscription for E2 node with ID %s due to %s", e2NodeID, err)
-	}
-
-	err := backoff.RetryNotify(func() error {
-		err := m.createSubscription(ctx, e2NodeID)
-		return err
-	}, newExpBackoff(), notifier)
+	err := m.createSubscription(ctx, e2NodeID)
 	if err != nil {
 		return err
 	}
