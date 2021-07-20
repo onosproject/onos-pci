@@ -198,10 +198,7 @@ func (m *Manager) createSubscription(ctx context.Context, e2nodeID topoapi.ID) e
 
 func (m *Manager) newSubscription(ctx context.Context, e2NodeID topoapi.ID) error {
 	err := m.createSubscription(ctx, e2NodeID)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (m *Manager) watchE2Connections(ctx context.Context) error {
