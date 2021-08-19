@@ -46,9 +46,12 @@ func (c *Client) SetCellPCI(ctx context.Context, cellID topoapi.ID, pci uint32) 
 
 	if object != nil && object.GetEntity().GetKindID() == topoapi.E2CELL {
 		cellObject := &topoapi.E2Cell{}
-		object.GetAspect(cellObject)
+		err := object.GetAspect(cellObject)
+		if err != nil {
+			return err
+		}
 		cellObject.PCI = pci
-		err := object.SetAspect(cellObject)
+		err = object.SetAspect(cellObject)
 		if err != nil {
 			return err
 		}
@@ -77,7 +80,10 @@ func (c *Client) GetCells(ctx context.Context, nodeID topoapi.ID) ([]*topoapi.E2
 		targetEntity := obj.GetEntity()
 		if targetEntity.GetKindID() == topoapi.E2CELL {
 			cellObject := &topoapi.E2Cell{}
-			obj.GetAspect(cellObject)
+			err = obj.GetAspect(cellObject)
+			if err != nil {
+				return nil, err
+			}
 			cells = append(cells, cellObject)
 		}
 	}
@@ -108,9 +114,8 @@ func (c *Client) GetE2NodeAspects(ctx context.Context, nodeID topoapi.ID) (*topo
 		return nil, err
 	}
 	e2Node := &topoapi.E2Node{}
-	object.GetAspect(e2Node)
-
-	return e2Node, nil
+	err = object.GetAspect(e2Node)
+	return e2Node, err
 
 }
 
