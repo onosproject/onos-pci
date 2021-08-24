@@ -13,7 +13,7 @@ import (
 
 func TestPlmnIdToUint32(t *testing.T) {
 	samplePlmnIDBytes := []byte{38, 132, 19}
-	samplePlmnIDUint32 := PlmnIdToUint32(samplePlmnIDBytes)
+	samplePlmnIDUint32 := PlmnIDToUint32(samplePlmnIDBytes)
 
 	assert.Equal(t, samplePlmnIDUint32, uint32(1279014))
 	assert.Equal(t, fmt.Sprintf("%x", samplePlmnIDUint32), "138426")

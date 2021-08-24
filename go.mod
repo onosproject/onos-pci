@@ -1,6 +1,6 @@
 module github.com/onosproject/onos-pci
 
-go 1.14
+go 1.16
 
 require (
 	github.com/envoyproxy/protoc-gen-validate v0.6.1 // indirect

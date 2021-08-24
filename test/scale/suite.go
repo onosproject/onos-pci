@@ -21,19 +21,19 @@ type TestSuite struct {
 func (s *TestSuite) SetupTestSuite(c *input.Context) error {
 
 	// write files
-	err := utils.WriteFile("/tmp/tls.cacrt", utils.TlsCacrt)
+	err := utils.WriteFile("/tmp/tls.cacrt", utils.TLSCacrt)
 	if err != nil {
 		return err
 	}
-	err = utils.WriteFile("/tmp/tls.crt", utils.TlsCrt)
+	err = utils.WriteFile("/tmp/tls.crt", utils.TLSCrt)
 	if err != nil {
 		return err
 	}
-	err = utils.WriteFile("/tmp/tls.key", utils.TlsKey)
+	err = utils.WriteFile("/tmp/tls.key", utils.TLSKey)
 	if err != nil {
 		return err
 	}
-	err = utils.WriteFile("/tmp/config.json", utils.ConfigJson)
+	err = utils.WriteFile("/tmp/config.json", utils.ConfigJSON)
 	if err != nil {
 		return err
 	}

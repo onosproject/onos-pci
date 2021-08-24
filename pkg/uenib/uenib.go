@@ -125,11 +125,11 @@ func (c *Client) storeNeighborCellList(ctx context.Context, entry metrics.Entry)
 func (c *Client) createUENIBUpdateRequest(entry metrics.Entry) (*uenib.UpdateUERequest, error) {
 	entryKey := entry.Key
 	entryValue := entry.Value
-	plmnIDByte, cid, cType, err := parse.ParseMetricKey(entryKey.CellGlobalID)
+	plmnIDByte, cid, cType, err := parse.GetMetricKey(entryKey.CellGlobalID)
 	if err != nil {
 		return nil, err
 	}
-	plmnID := decode.PlmnIdToUint32(plmnIDByte)
+	plmnID := decode.PlmnIDToUint32(plmnIDByte)
 	nodeID := entryValue.E2NodeID
 
 	uenibKey := fmt.Sprintf("%s:%x:%x:%s", nodeID, plmnID, cid, cType.String())
@@ -159,11 +159,11 @@ func (c *Client) encodeNeighborListToString(neighbors []*e2sm_rc_pre_v2.Nrt) (st
 
 	for i := 0; i < len(neighbors); i++ {
 		n := neighbors[i]
-		nPlmnIDByte, nCid, nCType, err := parse.ParseMetricKey(n.GetCgi())
+		nPlmnIDByte, nCid, nCType, err := parse.GetMetricKey(n.GetCgi())
 		if err != nil {
 			return "", err
 		}
-		nPlmnID := decode.PlmnIdToUint32(nPlmnIDByte)
+		nPlmnID := decode.PlmnIDToUint32(nPlmnIDByte)
 		if i == 0 {
 			encNeighbors = fmt.Sprintf("%x:%x:%s", nPlmnID, nCid, nCType.String())
 			continue
