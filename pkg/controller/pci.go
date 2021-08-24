@@ -107,7 +107,7 @@ func (p *PciController) getEmptyPciMap(pciPoolList []*types.PCIPool) (map[int32]
 }
 
 func (p *PciController) neighborTraversal(ctx context.Context, rootKey metrics.Key, entry *metrics.Entry, cDepth int, pciMap map[int32]bool) error {
-	var err error = nil
+	var err error
 	if cDepth > SearchDepth {
 		// if this is the leaf entry, then return
 		return err
@@ -142,7 +142,7 @@ func (p *PciController) neighborTraversal(ctx context.Context, rootKey metrics.K
 // since entry key is the pointer of CGI, it is impossible to get entry with CGI in neighbor field
 func (p *PciController) getEntryWithNeighborCGI(ctx context.Context, id *e2sm_rc_pre_v2.CellGlobalId) *metrics.Entry {
 	ch := make(chan *metrics.Entry)
-	var targetEntry *metrics.Entry = nil
+	var targetEntry *metrics.Entry
 	go func(chan *metrics.Entry) {
 		err := p.metricStore.Entries(ctx, ch)
 		if err != nil {
@@ -159,18 +159,18 @@ func (p *PciController) getEntryWithNeighborCGI(ctx context.Context, id *e2sm_rc
 
 // isCGIEqual compares CGI values, not pointers
 func (p *PciController) isCGIEqual(s *e2sm_rc_pre_v2.CellGlobalId, t *e2sm_rc_pre_v2.CellGlobalId) bool {
-	sPlmnID, sCellID, sCGIType, err := parse.ParseMetricKey(s)
+	sPlmnID, sCellID, sCGIType, err := parse.GetMetricKey(s)
 	if err != nil {
 		log.Errorf("could not parse source CGI: %v", err)
 		return false
 	}
-	tPlmnID, tCellID, tCGIType, err := parse.ParseMetricKey(t)
+	tPlmnID, tCellID, tCGIType, err := parse.GetMetricKey(t)
 	if err != nil {
 		log.Errorf("could not parse target CGI: %v", err)
 		return false
 	}
 
-	if decode.PlmnIdToUint32(sPlmnID) == decode.PlmnIdToUint32(tPlmnID) &&
+	if decode.PlmnIDToUint32(sPlmnID) == decode.PlmnIDToUint32(tPlmnID) &&
 		sCellID == tCellID && sCGIType == tCGIType {
 		return true
 	}

@@ -21,7 +21,7 @@ func (c CGIType) String() string {
 	return [...]string{"CGITypeNRCGI", "CGITypeECGI", "CGITypeUnknown"}[c]
 }
 
-func ParseMetricKey(e *e2smrcprev2.CellGlobalId) ([]byte, uint64, CGIType, error) {
+func GetMetricKey(e *e2smrcprev2.CellGlobalId) ([]byte, uint64, CGIType, error) {
 	if e == nil {
 		return nil, 0, CGITypeUnknown, errors.NewNotFound("CellGlobalID is not found in entry Key field")
 	} else if e.GetNrCgi() != nil {
@@ -49,7 +49,7 @@ func GetCellID(cellGlobalID *e2smrcprev2.CellGlobalId) (uint64, error) {
 }
 
 func BitStringToUint64(bitString []byte, bitCount int) uint64 {
-	var result uint64 = 0
+	var result uint64
 	for i, b := range bitString {
 		result += uint64(b) << ((len(bitString) - i - 1) * 8)
 	}
