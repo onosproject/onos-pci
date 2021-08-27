@@ -6,7 +6,6 @@ package rnib
 
 import (
 	"context"
-
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
 	toposdk "github.com/onosproject/onos-ric-sdk-go/pkg/topo"
 )

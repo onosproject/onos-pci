@@ -6,6 +6,7 @@ package monitoring
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/onosproject/onos-pci/pkg/utils/parse"
@@ -108,7 +109,7 @@ func (m *Monitor) processIndicationFormat1(ctx context.Context, indication e2api
 	if err != nil {
 		return err
 	}
-	cellTopoID := topoapi.ID(strconv.FormatUint(cellID, 16))
+	cellTopoID := topoapi.ID(fmt.Sprintf("%s/%s", nodeID, strconv.FormatUint(cellID, 16)))
 	err = m.rnibClient.SetCellPCI(ctx, cellTopoID, uint32(cellPCI))
 	if err != nil {
 		return err
