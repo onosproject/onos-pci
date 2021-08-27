@@ -6,13 +6,9 @@ package rnib
 
 import (
 	"context"
-	"github.com/onosproject/onos-lib-go/pkg/logging"
-
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
 	toposdk "github.com/onosproject/onos-ric-sdk-go/pkg/topo"
 )
-
-var log = logging.GetLogger("rnib")
 
 // TopoClient R-NIB client interface
 type TopoClient interface {
