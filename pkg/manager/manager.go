@@ -56,20 +56,20 @@ func NewManager(config Config) *Manager {
 	}
 
 	manager := &Manager{
-		appConfig:   appCfg,
-		config:      config,
-		e2Manager:   e2Manager,
-		pciCtrl:     controller.NewPciController(metricStore),
+		appConfig: appCfg,
+		config:    config,
+		e2Manager: e2Manager,
+		pciCtrl:   controller.NewPciController(metricStore),
 	}
 	return manager
 }
 
 // Manager is a manager for the PCI xAPP service
 type Manager struct {
-	appConfig   appConfig.Config
-	config      Config
-	e2Manager   e2.Manager
-	pciCtrl     controller.PciController
+	appConfig appConfig.Config
+	config    Config
+	e2Manager e2.Manager
+	pciCtrl   controller.PciController
 }
 
 // Run starts the manager and the associated services

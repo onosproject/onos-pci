@@ -9,13 +9,10 @@ import (
 	"fmt"
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
 	e2sm_rc_pre_v2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
-	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-pci/pkg/utils/decode"
 	"github.com/onosproject/onos-pci/pkg/utils/parse"
 	toposdk "github.com/onosproject/onos-ric-sdk-go/pkg/topo"
 )
-
-var log = logging.GetLogger("rnib")
 
 // TopoClient R-NIB client interface
 type TopoClient interface {
