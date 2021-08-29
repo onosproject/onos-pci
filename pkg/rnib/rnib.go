@@ -7,6 +7,7 @@ package rnib
 import (
 	"context"
 	"fmt"
+
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
 	e2sm_rc_pre_v2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
 	"github.com/onosproject/onos-pci/pkg/utils/decode"
