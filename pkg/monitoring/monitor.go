@@ -115,6 +115,7 @@ func (m *Monitor) processIndicationFormat1(ctx context.Context, indication e2api
 	}
 	cellTopoID := topoapi.ID(fmt.Sprintf("%s/%s", nodeID, strconv.FormatUint(cellID, 16)))
 	err = m.rnibClient.UpdateCellAspects(ctx, cellTopoID, uint32(cellPCI), messageFormat1.GetNeighbors())
+
 	if err != nil {
 		return err
 	}
