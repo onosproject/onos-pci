@@ -15,7 +15,6 @@ import (
 	"github.com/onosproject/onos-pci/pkg/controller"
 	"github.com/onosproject/onos-pci/pkg/southbound/e2"
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
-	"github.com/onosproject/onos-pci/pkg/uenib"
 	app "github.com/onosproject/onos-ric-sdk-go/pkg/config/app/default"
 )
 
@@ -57,22 +56,20 @@ func NewManager(config Config) *Manager {
 	}
 
 	manager := &Manager{
-		appConfig:   appCfg,
-		config:      config,
-		e2Manager:   e2Manager,
-		pciCtrl:     controller.NewPciController(metricStore),
-		uenibClient: uenib.NewUENIBClient(context.Background(), metricStore, config.CertPath, config.KeyPath),
+		appConfig: appCfg,
+		config:    config,
+		e2Manager: e2Manager,
+		pciCtrl:   controller.NewPciController(metricStore),
 	}
 	return manager
 }
 
 // Manager is a manager for the PCI xAPP service
 type Manager struct {
-	appConfig   appConfig.Config
-	config      Config
-	e2Manager   e2.Manager
-	pciCtrl     controller.PciController
-	uenibClient uenib.Client
+	appConfig appConfig.Config
+	config    Config
+	e2Manager e2.Manager
+	pciCtrl   controller.PciController
 }
 
 // Run starts the manager and the associated services
@@ -98,7 +95,6 @@ func (m *Manager) Start() error {
 	}
 
 	m.pciCtrl.Run(context.Background())
-	m.uenibClient.Run(context.Background())
 
 	return nil
 }
