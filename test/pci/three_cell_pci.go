@@ -18,7 +18,7 @@ func (s *TestSuite) TestThreeCellPci(t *testing.T) {
 		KeyPath:     "/tmp/tls.key",
 		CertPath:    "/tmp/tls.crt",
 		ConfigPath:  "/tmp/config.json",
-		E2tEndpoint: "onos-e2t:5150",   // TODO: Deprecated; remove
+		E2tEndpoint: "onos-e2t:5150", // TODO: Deprecated; remove
 		GRPCPort:    5150,
 		SMName:      "oran-e2sm-rc-pre",
 		SMVersion:   "v2",

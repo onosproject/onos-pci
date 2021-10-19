@@ -8,9 +8,9 @@ import (
 	"github.com/onosproject/helmit/pkg/helm"
 	"github.com/onosproject/helmit/pkg/input"
 	"github.com/onosproject/helmit/pkg/test"
+	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-pci/test/utils"
 	testutils "github.com/onosproject/onos-ric-sdk-go/pkg/utils"
-	"github.com/onosproject/onos-lib-go/pkg/logging"
 )
 
 // TestSuite is the primary onos-pci test suite
