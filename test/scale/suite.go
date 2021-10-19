@@ -8,7 +8,6 @@ import (
 	"github.com/onosproject/helmit/pkg/helm"
 	"github.com/onosproject/helmit/pkg/input"
 	"github.com/onosproject/helmit/pkg/test"
-	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-pci/test/utils"
 	testutils "github.com/onosproject/onos-ric-sdk-go/pkg/utils"
 )
@@ -49,7 +48,7 @@ func (s *TestSuite) SetupTestSuite(c *input.Context) error {
 		Set("ran-simulator.pci.modelName", "scale-50-150")
 	r := sdran.Install(true)
 
-	logging.GetLogger("onos", "proxy", "e2", "v1beta1", "balancer").SetLevel(logging.DebugLevel)
+	//logging.GetLogger("onos", "proxy", "e2", "v1beta1", "balancer").SetLevel(logging.DebugLevel)
 	testutils.StartTestProxy()
 	return r
 }
