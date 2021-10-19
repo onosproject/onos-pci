@@ -9,6 +9,7 @@ import (
 	"github.com/onosproject/helmit/pkg/input"
 	"github.com/onosproject/helmit/pkg/test"
 	"github.com/onosproject/onos-pci/test/utils"
+	testutils "github.com/onosproject/onos-ric-sdk-go/pkg/utils"
 )
 
 // TestSuite is the primary onos-pci test suite
@@ -45,10 +46,15 @@ func (s *TestSuite) SetupTestSuite(c *input.Context) error {
 	s.sdran = sdran
 	sdran.Set("ran-simulator.pci.metricName", "three-cell-metrics").
 		Set("ran-simulator.pci.modelName", "three-cell-model")
-	return sdran.Install(true)
+	r := sdran.Install(true)
+
+	//logging.GetLogger("onos", "proxy", "e2", "v1beta1", "balancer").SetLevel(logging.DebugLevel)
+	testutils.StartTestProxy()
+	return r
 }
 
 // TearDownTestSuite uninstalls helm chart released
 func (s *TestSuite) TearDownTestSuite() error {
+	testutils.StopTestProxy()
 	return s.sdran.Uninstall()
 }
