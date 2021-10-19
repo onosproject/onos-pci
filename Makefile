@@ -80,7 +80,7 @@ all: build images
 integration-tests: # @HELP run helmit integration tests
 integration-tests:
 	@kubectl delete ns test; kubectl create ns test
-	helmit test ./cmd/onos-pci-tests/ --secret sd-ran-username=$repo_user --secret sd-ran-password=$repo_password --no-teardown -n test
+	helmit test ./cmd/onos-pci-tests/ --secret sd-ran-username=${repo_user} --secret sd-ran-password=${repo_password} --no-teardown -n test
 
 publish: # @HELP publish version on github and dockerhub
 	./../build-tools/publish-version ${VERSION} onosproject/onos-pci
