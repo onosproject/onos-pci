@@ -60,6 +60,21 @@ protos:
 		--entrypoint build/bin/compile-protos.sh \
 		onosproject/protoc-go:${ONOS_PROTOC_VERSION}
 
+integration-test-namespace:
+	(kubectl delete ns test || exit 0) && kubectl create ns test
+
+integration-tests: helmit-pci helmit-scale
+
+helmit-pci: integration-test-namespace # @HELP run PCI tests locally
+	helmit test -n test ./cmd/onos-pci-tests --timeout 30m --no-teardown \
+			--secret sd-ran-username=${repo_user} --secret sd-ran-password=${repo_password} \
+			--suite pci
+
+helmit-scale: integration-test-namespace # @HELP run PCI tests locally
+	helmit test -n test ./cmd/onos-pci-tests --timeout 30m --no-teardown \
+			--secret sd-ran-username=${repo_user} --secret sd-ran-password=${repo_password} \
+			--suite scale
+
 onos-pci-docker: # @HELP build onos-pci Docker image
 onos-pci-docker:
 	@go mod vendor
