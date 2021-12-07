@@ -10,6 +10,7 @@ COPY cmd/ /go/src/github.com/onosproject/onos-pci/cmd/
 COPY pkg/ /go/src/github.com/onosproject/onos-pci/pkg/
 COPY vendor/ /go/src/github.com/onosproject/onos-pci/vendor/
 COPY api/ /go/src/github.com/onosproject/onos-pci/api
+COPY build/ /go/src/github.com/onosproject/onos-pci/build
 
 RUN cd /go/src/github.com/onosproject/onos-pci && GOFLAGS=-mod=vendor make ${ONOS_MAKE_TARGET}
 
