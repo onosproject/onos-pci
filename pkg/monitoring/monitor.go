@@ -79,6 +79,7 @@ func (m *Monitor) processIndicationFormat1(ctx context.Context, indication e2api
 
 	cellCGI := headerFormat1.GetCgi()
 	cellPCI := messageFormat1.GetPci().GetValue()
+	cellSize := messageFormat1.GetCellSize()
 
 	var pciPoolList []*types.PCIPool
 	pciPool := &types.PCIPool{
@@ -95,7 +96,8 @@ func (m *Monitor) processIndicationFormat1(ctx context.Context, indication e2api
 		Value: types.CellPCI{
 			E2NodeID: nodeID,
 			Metric: &types.CellMetric{
-				PCI: cellPCI,
+				PCI:      cellPCI,
+				CellSize: cellSize,
 			},
 			Neighbors:   messageFormat1.GetNeighbors(),
 			PCIPoolList: pciPoolList,
@@ -110,7 +112,7 @@ func (m *Monitor) processIndicationFormat1(ctx context.Context, indication e2api
 		return err
 	}
 	cellTopoID := topoapi.ID(fmt.Sprintf("%s/%s", nodeID, strconv.FormatUint(cellID, 16)))
-	err = m.rnibClient.UpdateCellAspects(ctx, cellTopoID, uint32(cellPCI), messageFormat1.GetNeighbors())
+	err = m.rnibClient.UpdateCellAspects(ctx, cellTopoID, uint32(cellPCI), messageFormat1.GetNeighbors(), cellSize.String())
 
 	if err != nil {
 		return err

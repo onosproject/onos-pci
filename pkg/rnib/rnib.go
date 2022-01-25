@@ -42,7 +42,7 @@ type Client struct {
 	client toposdk.Client
 }
 
-func (c *Client) UpdateCellAspects(ctx context.Context, cellID topoapi.ID, pci uint32, neighborIDs []*e2sm_rc_pre_v2.Nrt) error {
+func (c *Client) UpdateCellAspects(ctx context.Context, cellID topoapi.ID, pci uint32, neighborIDs []*e2sm_rc_pre_v2.Nrt, cellType string) error {
 	object, err := c.client.Get(ctx, cellID)
 	if err != nil {
 		return err
@@ -71,6 +71,7 @@ func (c *Client) UpdateCellAspects(ctx context.Context, cellID topoapi.ID, pci u
 			}
 			cellObject.NeighborCellIDs = append(cellObject.NeighborCellIDs, nIDObj)
 		}
+		cellObject.CellType = cellType
 		err = object.SetAspect(cellObject)
 		if err != nil {
 			return err
