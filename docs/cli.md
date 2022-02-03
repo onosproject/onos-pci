@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2019-present Open Networking Foundation <info@opennetworking.org>
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # onos-pci CLI
 
 onos-pci is equipped with a CLI which is integrated with [onos-cli] and supports the following commands:
