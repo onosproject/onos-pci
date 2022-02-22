@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
-	e2sm_rc_pre_v2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
+	e2smrcprev2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/v2/e2sm-rc-pre-v2-go"
 	"github.com/onosproject/onos-pci/pkg/utils/decode"
 	"github.com/onosproject/onos-pci/pkg/utils/parse"
 	toposdk "github.com/onosproject/onos-ric-sdk-go/pkg/topo"
@@ -42,7 +42,7 @@ type Client struct {
 	client toposdk.Client
 }
 
-func (c *Client) UpdateCellAspects(ctx context.Context, cellID topoapi.ID, pci uint32, neighborIDs []*e2sm_rc_pre_v2.Nrt, cellType string) error {
+func (c *Client) UpdateCellAspects(ctx context.Context, cellID topoapi.ID, pci uint32, neighborIDs []*e2smrcprev2.Nrt, cellType string) error {
 	object, err := c.client.Get(ctx, cellID)
 	if err != nil {
 		return err

@@ -244,7 +244,7 @@ func (m *Manager) watchPCIChanges(ctx context.Context, e2nodeID topoapi.ID) {
 			}
 			newPci := e.Value.Value.Metric.PCI
 			log.Debugf("send control message for key: %v / pci: %v", e.Key, newPci)
-			payload, err := control.CreateRcControlMessage(10, "pci", uint32(newPci))
+			payload, err := control.CreateRcControlMessage(10, "pci", int64(newPci))
 			if err != nil {
 				log.Warn(err)
 			}

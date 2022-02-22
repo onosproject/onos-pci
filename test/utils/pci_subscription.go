@@ -6,14 +6,15 @@ package utils
 
 import (
 	"context"
+	"time"
+
 	"github.com/onosproject/onos-api/go/onos/e2sub/subscription"
 	e2tapi "github.com/onosproject/onos-api/go/onos/e2t/e2"
-	"github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/pdubuilder"
+	"github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/pdubuilder"
 	e2client "github.com/onosproject/onos-ric-sdk-go/pkg/e2"
 	"github.com/onosproject/onos-ric-sdk-go/pkg/e2/indication"
 	e2subscription "github.com/onosproject/onos-ric-sdk-go/pkg/e2/subscription"
 	"google.golang.org/protobuf/proto"
-	"time"
 )
 
 func CreatePciSubscriptionSingle(indCh chan indication.Indication, ctrlReqMap map[string]chan *e2tapi.ControlRequest) (e2subscription.Context, error) {
@@ -91,10 +92,11 @@ func CreatePciEventTrigger() ([]byte, error) {
 		return []byte{}, err
 	}
 
-	err = e2smRcEventTriggerDefinition.Validate()
+	// TODO enable it when it is available
+	/*err = e2smRcEventTriggerDefinition.Validate()
 	if err != nil {
 		return []byte{}, err
-	}
+	}*/
 
 	protoBytes, err := proto.Marshal(e2smRcEventTriggerDefinition)
 	if err != nil {
