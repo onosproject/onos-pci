@@ -17,11 +17,10 @@ func CreateEventTriggerOnChange() ([]byte, error) {
 		return []byte{}, err
 	}
 
-	// TODO enable it when it is available
-	/*err = e2smRcEventTriggerDefinition.Validate()
+	err = e2smRcEventTriggerDefinition.Validate()
 	if err != nil {
 		return []byte{}, err
-	}*/
+	}
 
 	protoBytes, err := proto.Marshal(e2smRcEventTriggerDefinition)
 	if err != nil {

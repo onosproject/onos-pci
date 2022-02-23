@@ -19,7 +19,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-var log = logging.GetLogger("e2", "subscription", "manager")
+var log = logging.GetLogger()
 
 // NewService returns a new PCI interface service.
 func NewService(store metrics.Store) service.Service {

@@ -19,11 +19,10 @@ func CreateRcControlHeader(cgi *e2smrcpre.CellGlobalId, priority *int32) ([]byte
 		return []byte{}, err
 	}
 
-	// TODO enable it when it is available
-	/*err = newE2SmRcPrePdu.Validate()
+	err = newE2SmRcPrePdu.Validate()
 	if err != nil {
 		return []byte{}, err
-	}*/
+	}
 
 	protoBytes, err := proto.Marshal(newE2SmRcPrePdu)
 	if err != nil {
@@ -43,11 +42,10 @@ func CreateRcControlMessage(ranParamID int32, ranParamName string, ranParamValue
 		return []byte{}, err
 	}
 
-	// TODO enable it when it is available
-	/*err = newE2SmRcPrePdu.Validate()
+	err = newE2SmRcPrePdu.Validate()
 	if err != nil {
 		return []byte{}, err
-	}*/
+	}
 
 	protoBytes, err := proto.Marshal(newE2SmRcPrePdu)
 	if err != nil {

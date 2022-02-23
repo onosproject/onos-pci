@@ -20,7 +20,7 @@ import (
 // neighbor only = 1; neighbor and neighbor's neighbor = 2
 const SearchDepth = 2
 
-var log = logging.GetLogger("controller", "pci")
+var log = logging.GetLogger()
 
 func NewPciController(store metrics.Store) PciController {
 	return PciController{
