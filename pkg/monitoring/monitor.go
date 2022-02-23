@@ -17,7 +17,7 @@ import (
 
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
 
-	e2smrcpreies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
+	e2smrcpreies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/v2/e2sm-rc-pre-v2-go"
 
 	e2api "github.com/onosproject/onos-api/go/onos/e2t/e2/v1beta1"
 
@@ -31,7 +31,7 @@ import (
 	"github.com/onosproject/onos-pci/pkg/broker"
 )
 
-var log = logging.GetLogger("monitoring")
+var log = logging.GetLogger()
 
 // NewMonitor creates a new indication monitor
 func NewMonitor(opts ...Option) *Monitor {

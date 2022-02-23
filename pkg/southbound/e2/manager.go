@@ -31,7 +31,7 @@ import (
 	e2client "github.com/onosproject/onos-ric-sdk-go/pkg/e2/v1beta1"
 )
 
-var log = logging.GetLogger("e2", "subscription", "manager")
+var log = logging.GetLogger()
 
 const (
 	oid = "1.3.6.1.4.1.53148.1.2.2.100"
@@ -244,7 +244,7 @@ func (m *Manager) watchPCIChanges(ctx context.Context, e2nodeID topoapi.ID) {
 			}
 			newPci := e.Value.Value.Metric.PCI
 			log.Debugf("send control message for key: %v / pci: %v", e.Key, newPci)
-			payload, err := control.CreateRcControlMessage(10, "pci", uint32(newPci))
+			payload, err := control.CreateRcControlMessage(10, "pci", int64(newPci))
 			if err != nil {
 				log.Warn(err)
 			}

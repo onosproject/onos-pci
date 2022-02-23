@@ -5,14 +5,15 @@
 package control
 
 import (
-	"github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/pdubuilder"
-	e2smrcpre "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
+	"github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/pdubuilder"
+	e2smrcpre "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/v2/e2sm-rc-pre-v2-go"
 	"google.golang.org/protobuf/proto"
 )
 
 func CreateRcControlHeader(cgi *e2smrcpre.CellGlobalId, priority *int32) ([]byte, error) {
 
-	newE2SmRcPrePdu, err := pdubuilder.CreateE2SmRcPreControlHeader(priority, cgi)
+	newE2SmRcPrePdu, err := pdubuilder.CreateE2SmRcPreControlHeader()
+	newE2SmRcPrePdu.GetControlHeaderFormat1().SetCGI(cgi).SetRicControlMessagePriority(*priority)
 
 	if err != nil {
 		return []byte{}, err
@@ -31,7 +32,7 @@ func CreateRcControlHeader(cgi *e2smrcpre.CellGlobalId, priority *int32) ([]byte
 	return protoBytes, nil
 }
 
-func CreateRcControlMessage(ranParamID int32, ranParamName string, ranParamValue uint32) ([]byte, error) {
+func CreateRcControlMessage(ranParamID int32, ranParamName string, ranParamValue int64) ([]byte, error) {
 	ranParamValueInt, err := pdubuilder.CreateRanParameterValueInt(ranParamValue)
 	if err != nil {
 		return []byte{}, err

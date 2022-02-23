@@ -6,10 +6,11 @@ package metrics
 
 import (
 	"context"
-	"github.com/onosproject/onos-pci/pkg/utils/parse"
 	"sync"
 
-	e2smrcpre "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
+	"github.com/onosproject/onos-pci/pkg/utils/parse"
+
+	e2smrcpre "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/v2/e2sm-rc-pre-v2-go"
 
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 
@@ -18,7 +19,7 @@ import (
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 )
 
-var log = logging.GetLogger("store", "metrics")
+var log = logging.GetLogger()
 
 // Store kpm metrics store interface
 type Store interface {

@@ -7,7 +7,7 @@ package controller
 import (
 	"context"
 
-	e2sm_rc_pre_v2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
+	e2smrcprev2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/v2/e2sm-rc-pre-v2-go"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
@@ -20,7 +20,7 @@ import (
 // neighbor only = 1; neighbor and neighbor's neighbor = 2
 const SearchDepth = 2
 
-var log = logging.GetLogger("controller", "pci")
+var log = logging.GetLogger()
 
 func NewPciController(store metrics.Store) PciController {
 	return PciController{
@@ -140,7 +140,7 @@ func (p *PciController) neighborTraversal(ctx context.Context, rootKey metrics.K
 // getEntryWithNeighborCGI gets entry in store with CGI value, not entry key (not pointer)
 // used when searching neighbor entry in store
 // since entry key is the pointer of CGI, it is impossible to get entry with CGI in neighbor field
-func (p *PciController) getEntryWithNeighborCGI(ctx context.Context, id *e2sm_rc_pre_v2.CellGlobalId) *metrics.Entry {
+func (p *PciController) getEntryWithNeighborCGI(ctx context.Context, id *e2smrcprev2.CellGlobalId) *metrics.Entry {
 	ch := make(chan *metrics.Entry)
 	var targetEntry *metrics.Entry
 	go func(chan *metrics.Entry) {
@@ -158,7 +158,7 @@ func (p *PciController) getEntryWithNeighborCGI(ctx context.Context, id *e2sm_rc
 }
 
 // isCGIEqual compares CGI values, not pointers
-func (p *PciController) isCGIEqual(s *e2sm_rc_pre_v2.CellGlobalId, t *e2sm_rc_pre_v2.CellGlobalId) bool {
+func (p *PciController) isCGIEqual(s *e2smrcprev2.CellGlobalId, t *e2smrcprev2.CellGlobalId) bool {
 	sPlmnID, sCellID, sCGIType, err := parse.GetMetricKey(s)
 	if err != nil {
 		log.Errorf("could not parse source CGI: %v", err)

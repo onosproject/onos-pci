@@ -6,10 +6,11 @@ package northbound
 
 import (
 	"context"
+
 	"github.com/onosproject/onos-pci/pkg/utils/parse"
 
 	pciapi "github.com/onosproject/onos-api/go/onos/pci"
-	e2sm_rc_pre_v2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre/v2/e2sm-rc-pre-v2"
+	e2smrcprev2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/v2/e2sm-rc-pre-v2-go"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	service "github.com/onosproject/onos-lib-go/pkg/northbound"
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
@@ -18,7 +19,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-var log = logging.GetLogger("e2", "subscription", "manager")
+var log = logging.GetLogger()
 
 // NewService returns a new PCI interface service.
 func NewService(store metrics.Store) service.Service {
@@ -131,7 +132,7 @@ func (s *Server) GetCells(ctx context.Context, request *pciapi.GetCellsRequest) 
 }
 
 // convert from NRCGI to uint64
-func nrcgiToInt(nrcgi *e2sm_rc_pre_v2.Nrcgi) uint64 {
+func nrcgiToInt(nrcgi *e2smrcprev2.Nrcgi) uint64 {
 	array := nrcgi.PLmnIdentity.Value
 	plmnid := uint32(array[0])<<0 | uint32(array[1])<<8 | uint32(array[2])<<16
 	nci := nrcgi.NRcellIdentity.Value.Value
@@ -152,7 +153,7 @@ func pciPoolToRange(list []*types.PCIPool) []*pciapi.PciRange {
 }
 
 // helper function used in cellPciToPciCell
-func neighborsToIDs(list []*e2sm_rc_pre_v2.Nrt) []uint64 {
+func neighborsToIDs(list []*e2smrcprev2.Nrt) []uint64 {
 	out := make([]uint64, 0)
 	for pool := range list {
 		out = append(out, nrcgiToInt(list[pool].Cgi.GetNrCgi()))
