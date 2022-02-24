@@ -7,13 +7,21 @@ package control
 import (
 	"github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/pdubuilder"
 	e2smrcpre "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/v2/e2sm-rc-pre-v2-go"
+	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"google.golang.org/protobuf/proto"
 )
 
 func CreateRcControlHeader(cgi *e2smrcpre.CellGlobalId, priority *int32) ([]byte, error) {
+	if cgi == nil {
+		return nil, errors.NewInvalid("cgi is not set")
+	}
 
 	newE2SmRcPrePdu, err := pdubuilder.CreateE2SmRcPreControlHeader()
-	newE2SmRcPrePdu.GetControlHeaderFormat1().SetCGI(cgi).SetRicControlMessagePriority(*priority)
+	ctrlHdrFormat1 := newE2SmRcPrePdu.GetControlHeaderFormat1()
+	ctrlHdrFormat1.SetCGI(cgi)
+	if priority != nil {
+		ctrlHdrFormat1.SetRicControlMessagePriority(*priority)
+	}
 
 	if err != nil {
 		return []byte{}, err
