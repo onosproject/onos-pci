@@ -42,14 +42,10 @@ protos:
 integration-tests: helmit-pci helmit-scale
 
 helmit-pci: integration-test-namespace # @HELP run PCI tests locally
-	helmit test -n test ./cmd/onos-pci-tests --timeout 30m --no-teardown \
-			--secret sd-ran-username=${repo_user} --secret sd-ran-password=${repo_password} \
-			--suite pci
+	helmit test -n test ./cmd/onos-pci-tests --timeout 30m --no-teardown --suite pci
 
 helmit-scale: integration-test-namespace # @HELP run PCI tests locally
-	helmit test -n test ./cmd/onos-pci-tests --timeout 30m --no-teardown \
-			--secret sd-ran-username=${repo_user} --secret sd-ran-password=${repo_password} \
-			--suite scale
+	helmit test -n test ./cmd/onos-pci-tests --timeout 30m --no-teardown --suite scale
 
 onos-pci-docker: # @HELP build onos-pci Docker image
 onos-pci-docker:
