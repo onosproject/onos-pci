@@ -7,6 +7,7 @@ package monitoring
 
 import (
 	"context"
+	"fmt"
 	e2api "github.com/onosproject/onos-api/go/onos/e2t/e2/v1beta1"
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
 	e2smrc "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc/v1/e2sm-rc-ies"
@@ -16,7 +17,9 @@ import (
 	"github.com/onosproject/onos-pci/pkg/rnib"
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
 	"github.com/onosproject/onos-pci/pkg/types"
+	"github.com/onosproject/onos-pci/pkg/utils/parse"
 	"google.golang.org/protobuf/proto"
+	"strconv"
 )
 
 var log = logging.GetLogger()
@@ -105,15 +108,19 @@ func (m *Monitor) processIndicationFormat3(ctx context.Context, indication e2api
 				return err
 			}
 
-			//cellID, err := parse.GetCellID(cgi)
-			//if err != nil {
-			//	return err
-			//}
-			//cellTopoID := topoapi.ID(fmt.Sprintf("%s/%s", nodeID, strconv.FormatUint(cellID, 16)))
-			// ToDo: Update RNIB
+			cellID, err := parse.GetCellID(cgi)
+			if err != nil {
+				return err
+			}
+			cellTopoID := topoapi.ID(fmt.Sprintf("%s/%s", nodeID, strconv.FormatUint(cellID, 16)))
+			err = m.rnibClient.UpdateCellAspects(ctx, cellTopoID, uint32(pci), cellInfo.GetNeighborRelationTable().GetNeighborCellList().GetValue(), uint32(arfcn.GetNRarfcn()))
+			if err != nil {
+				return err
+			}
 		} else {
 			// 4G case
 			// ToDo: Add 4G case here
+			log.Errorf("4G case is not implemented yet")
 		}
 	}
 	return nil

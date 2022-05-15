@@ -173,6 +173,7 @@ func NewKey(cellGlobalID *e2smrccomm.Cgi) uint64 {
 		return nrcgiToInt(cellGlobalID.GetNRCgi())
 	}
 	// ToDo: Add here ECGI for 4G case
+	log.Errorf("4G case is not implemented yet")
 	return 0
 }
 

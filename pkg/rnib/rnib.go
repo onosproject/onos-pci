@@ -43,7 +43,7 @@ type Client struct {
 	client toposdk.Client
 }
 
-func (c *Client) UpdateCellAspects(ctx context.Context, cellID topoapi.ID, pci uint32, neighborIDs []*e2smrc.NeighborCellItem, cellType string, arfcn uint32) error {
+func (c *Client) UpdateCellAspects(ctx context.Context, cellID topoapi.ID, pci uint32, neighborIDs []*e2smrc.NeighborCellItem, arfcn uint32) error {
 	object, err := c.client.Get(ctx, cellID)
 	if err != nil {
 		return err
@@ -76,18 +76,9 @@ func (c *Client) UpdateCellAspects(ctx context.Context, cellID topoapi.ID, pci u
 			case *e2smrc.NeighborCellItem_RanTypeChoiceEutra:
 				// 4G case
 				// ToDo: add EUTRA case
+				fmt.Println("4G case is not supported yet")
 			}
 		}
-		cellObject.CellType = cellType
-		err = object.SetAspect(cellObject)
-		if err != nil {
-			return err
-		}
-		err = c.client.Update(ctx, object)
-		if err != nil {
-			return err
-		}
-		return nil
 		cellObject.ARFCN = arfcn
 		err = object.SetAspect(cellObject)
 		if err != nil {

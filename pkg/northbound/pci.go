@@ -77,6 +77,7 @@ func (s *Server) GetConflicts(ctx context.Context, request *pciapi.GetConflictsR
 			} else if neighbor.GetRanTypeChoiceEutra() != nil {
 				// 4G case
 				// ToDo: Add 4G case
+				log.Errorf("4G case is not implemented yet")
 			}
 		}
 	} else {
@@ -98,6 +99,7 @@ func (s *Server) GetConflicts(ctx context.Context, request *pciapi.GetConflictsR
 				} else if cell.Value.Neighbors[i].GetRanTypeChoiceEutra() != nil {
 					// 4G case
 					// ToDo: Add 4G case
+					log.Errorf("4G case is not implemented yet")
 				}
 			}
 		}
@@ -159,6 +161,7 @@ func cgiToInt(cgi *e2smrccomm.Cgi) uint64 {
 	} else if cgi.GetEUtraCgi() != nil {
 		// 4G case
 		// ToDo: Add 4G case
+		log.Errorf("4G case is not implemented yet")
 	}
 	log.Errorf("CGI does not have EUTRA CGI or NR CGI")
 	return 0
@@ -191,6 +194,7 @@ func neighborsToIDs(list []*e2smrc.NeighborCellItem) []uint64 {
 		} else if list[pool].GetRanTypeChoiceEutra() != nil {
 			// 4G case
 			// ToDo: Add 4G case
+			log.Errorf("4G case is not implemented yet")
 		}
 	}
 	return out
