@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022-present Intel Corporation
 // SPDX-FileCopyrightText: 2020-present Open Networking Foundation <info@opennetworking.org>
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -6,29 +7,16 @@ package monitoring
 
 import (
 	"context"
-	"fmt"
-	"strconv"
-
-	"github.com/onosproject/onos-pci/pkg/utils/parse"
-
-	"github.com/onosproject/onos-pci/pkg/rnib"
-
-	"github.com/onosproject/onos-pci/pkg/types"
-
-	"github.com/onosproject/onos-pci/pkg/store/metrics"
-
-	e2smrcpreies "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/v2/e2sm-rc-pre-v2-go"
-
 	e2api "github.com/onosproject/onos-api/go/onos/e2t/e2/v1beta1"
-
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
-
-	appConfig "github.com/onosproject/onos-pci/pkg/config"
-
+	e2smrc "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc/v1/e2sm-rc-ies"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
-	"google.golang.org/protobuf/proto"
-
 	"github.com/onosproject/onos-pci/pkg/broker"
+	appConfig "github.com/onosproject/onos-pci/pkg/config"
+	"github.com/onosproject/onos-pci/pkg/rnib"
+	"github.com/onosproject/onos-pci/pkg/store/metrics"
+	"github.com/onosproject/onos-pci/pkg/types"
+	"google.golang.org/protobuf/proto"
 )
 
 var log = logging.GetLogger()
@@ -58,71 +46,81 @@ type Monitor struct {
 	rnibClient   rnib.Client
 }
 
-func (m *Monitor) processIndicationFormat1(ctx context.Context, indication e2api.Indication, nodeID topoapi.ID) error {
-	header := e2smrcpreies.E2SmRcPreIndicationHeader{}
+func (m *Monitor) processIndicationFormat3(ctx context.Context, indication e2api.Indication, nodeID topoapi.ID) error {
+	header := e2smrc.E2SmRcIndicationHeader{}
 	err := proto.Unmarshal(indication.Header, &header)
 	if err != nil {
 		return err
 	}
 
-	message := e2smrcpreies.E2SmRcPreIndicationMessage{}
+	message := e2smrc.E2SmRcIndicationMessage{}
 	err = proto.Unmarshal(indication.Payload, &message)
 	if err != nil {
 		return err
 	}
 
-	headerFormat1 := header.GetIndicationHeaderFormat1()
-	messageFormat1 := message.GetIndicationMessageFormat1()
+	headerFormat1 := header.GetRicIndicationHeaderFormats().GetIndicationHeaderFormat1()
+	messageFormat3 := message.GetRicIndicationMessageFormats().GetIndicationMessageFormat3()
 
 	log.Debugf("Indication header format 1 %v", headerFormat1)
-	log.Debugf("Indication message format 1 %v", messageFormat1)
-
-	cellCGI := headerFormat1.GetCgi()
-	cellPCI := messageFormat1.GetPci().GetValue()
-	cellSize := messageFormat1.GetCellSize()
+	log.Debugf("Indication message format 3 %v", messageFormat3)
 
 	var pciPoolList []*types.PCIPool
 	pciPool := &types.PCIPool{
 		LowerPci: types.LowerPCI,
 		UpperPci: types.UpperPCI,
 	}
-
 	pciPoolList = append(pciPoolList, pciPool)
-	cellKey := metrics.NewKey(cellCGI)
-	_, err = m.metricStore.Put(ctx, cellKey, metrics.Entry{
-		Key: metrics.Key{
-			CellGlobalID: cellCGI,
-		},
-		Value: types.CellPCI{
-			E2NodeID: nodeID,
-			Metric: &types.CellMetric{
-				PCI:      cellPCI,
-				CellSize: cellSize,
-			},
-			Neighbors:   messageFormat1.GetNeighbors(),
-			PCIPoolList: pciPoolList,
-		},
-	})
-	if err != nil {
-		return err
-	}
 
-	cellID, err := parse.GetCellID(cellCGI)
-	if err != nil {
-		return err
-	}
-	cellTopoID := topoapi.ID(fmt.Sprintf("%s/%s", nodeID, strconv.FormatUint(cellID, 16)))
-	err = m.rnibClient.UpdateCellAspects(ctx, cellTopoID, uint32(cellPCI), messageFormat1.GetNeighbors(), cellSize.String())
+	for _, cellInfo := range messageFormat3.GetCellInfoList() {
+		if cellInfo.GetCellGlobalId().GetNRCgi() != nil {
+			// 5G case
+			cgi := cellInfo.GetCellGlobalId()
+			if cellInfo.GetNeighborRelationTable().GetServingCellPci().GetNR() == nil {
+				log.Errorf("PCI should be NR PCI but NR PCI field is empty in E2 Indication message")
+				continue
+			}
+			pci := cellInfo.GetNeighborRelationTable().GetServingCellPci().GetNR().GetValue()
+			if cellInfo.GetNeighborRelationTable().GetServingCellArfcn().GetNR() == nil {
+				log.Errorf("ARFCN should be NR ARFCN but NR ARFCN field is empty in E2 indication message")
+				continue
+			}
+			arfcn := cellInfo.GetNeighborRelationTable().GetServingCellArfcn().GetNR()
+			key := metrics.NewKey(cgi)
+			_, err := m.metricStore.Put(ctx, key, metrics.Entry{
+				Key: metrics.Key{
+					CellGlobalID: cgi,
+				},
+				Value: types.CellPCI{
+					E2NodeID: nodeID,
+					Metric: &types.CellMetric{
+						PCI:   pci,
+						ARFCN: arfcn.GetNRarfcn(),
+					},
+					Neighbors:   cellInfo.GetNeighborRelationTable().GetNeighborCellList().GetValue(),
+					PCIPoolList: pciPoolList,
+				},
+			})
+			if err != nil {
+				return err
+			}
 
-	if err != nil {
-		return err
+			//cellID, err := parse.GetCellID(cgi)
+			//if err != nil {
+			//	return err
+			//}
+			//cellTopoID := topoapi.ID(fmt.Sprintf("%s/%s", nodeID, strconv.FormatUint(cellID, 16)))
+			// ToDo: Update RNIB
+		} else {
+			// 4G case
+			// ToDo: Add 4G case here
+		}
 	}
-
 	return nil
 }
 
 func (m *Monitor) processIndication(ctx context.Context, indication e2api.Indication, nodeID topoapi.ID) error {
-	err := m.processIndicationFormat1(ctx, indication, nodeID)
+	err := m.processIndicationFormat3(ctx, indication, nodeID)
 	if err != nil {
 		log.Warn(err)
 		return err

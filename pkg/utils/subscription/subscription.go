@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022-present Intel Corporation
 // SPDX-FileCopyrightText: 2020-present Open Networking Foundation <info@opennetworking.org>
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -6,39 +7,57 @@ package subscription
 
 import (
 	e2api "github.com/onosproject/onos-api/go/onos/e2t/e2/v1beta1"
-	"github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/pdubuilder"
+	"github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc/pdubuilder"
+	e2smrc "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc/v1/e2sm-rc-ies"
 	"google.golang.org/protobuf/proto"
 )
 
-// CreateEventTriggerOnChange creates RC PRE event trigger data on change
-func CreateEventTriggerOnChange() ([]byte, error) {
-	e2smRcEventTriggerDefinition, err := pdubuilder.CreateE2SmRcPreEventTriggerDefinitionUponChange()
+const (
+	e2nodeInformationChangeID1CellConfigChange      = 1
+	e2nodeInformationChangeID2CellNeighborRelChange = 2
+)
+
+// CreateEventTriggerDefinition creates RC event trigger data
+func CreateEventTriggerDefinition() ([]byte, error) {
+	// for cell configuration change action
+	e2NodeInformationChangeID1, err := pdubuilder.CreateE2SmRcEventTriggerFormat3Item(e2nodeInformationChangeID1CellConfigChange,
+		e2nodeInformationChangeID1CellConfigChange)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
+	}
+	// for cell neighbor relation change
+	e2NodeInformationChangeID2, err := pdubuilder.CreateE2SmRcEventTriggerFormat3Item(e2nodeInformationChangeID2CellNeighborRelChange,
+		e2nodeInformationChangeID2CellNeighborRelChange)
+	if err != nil {
+		return nil, err
 	}
 
-	err = e2smRcEventTriggerDefinition.Validate()
+	itemList := []*e2smrc.E2SmRcEventTriggerFormat3Item{e2NodeInformationChangeID1, e2NodeInformationChangeID2}
+
+	rcEventTriggerDefinitionFormat3, err := pdubuilder.CreateE2SmRcEventTriggerFormat3(itemList)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
-	protoBytes, err := proto.Marshal(e2smRcEventTriggerDefinition)
+	err = rcEventTriggerDefinitionFormat3.Validate()
 	if err != nil {
-		return []byte{}, err
+		return nil, err
+	}
+
+	protoBytes, err := proto.Marshal(rcEventTriggerDefinitionFormat3)
+	if err != nil {
+		return nil, err
 	}
 
 	return protoBytes, nil
 }
 
+// CreateSubscriptionActions creates subscription actions for report
 func CreateSubscriptionActions() []e2api.Action {
 	actions := make([]e2api.Action, 0)
 	action := &e2api.Action{
-		ID:   int32(0),
+		ID:   int32(3),
 		Type: e2api.ActionType_ACTION_TYPE_REPORT,
-		SubsequentAction: &e2api.SubsequentAction{
-			Type:       e2api.SubsequentActionType_SUBSEQUENT_ACTION_TYPE_CONTINUE,
-			TimeToWait: e2api.TimeToWait_TIME_TO_WAIT_ZERO,
-		},
 	}
 	actions = append(actions, *action)
 	return actions

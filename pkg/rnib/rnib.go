@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022-present Intel Corporation
 // SPDX-FileCopyrightText: 2020-present Open Networking Foundation <info@opennetworking.org>
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -9,7 +10,7 @@ import (
 	"fmt"
 
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
-	e2smrcprev2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/v2/e2sm-rc-pre-v2-go"
+	e2smrc "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc/v1/e2sm-rc-ies"
 	"github.com/onosproject/onos-pci/pkg/utils/decode"
 	"github.com/onosproject/onos-pci/pkg/utils/parse"
 	toposdk "github.com/onosproject/onos-ric-sdk-go/pkg/topo"
@@ -42,7 +43,7 @@ type Client struct {
 	client toposdk.Client
 }
 
-func (c *Client) UpdateCellAspects(ctx context.Context, cellID topoapi.ID, pci uint32, neighborIDs []*e2smrcprev2.Nrt, cellType string) error {
+func (c *Client) UpdateCellAspects(ctx context.Context, cellID topoapi.ID, pci uint32, neighborIDs []*e2smrc.NeighborCellItem, cellType string, arfcn uint32) error {
 	object, err := c.client.Get(ctx, cellID)
 	if err != nil {
 		return err
@@ -57,19 +58,25 @@ func (c *Client) UpdateCellAspects(ctx context.Context, cellID topoapi.ID, pci u
 		cellObject.PCI = pci
 		cellObject.NeighborCellIDs = make([]*topoapi.NeighborCellID, 0)
 		for _, nID := range neighborIDs {
-			nPlmnIDByte, nCid, _, err := parse.GetMetricKey(nID.GetCgi())
-			if err != nil {
-				return err
+			switch v := nID.NeighborCellItem.(type) {
+			case *e2smrc.NeighborCellItem_RanTypeChoiceNr:
+				// 5G case
+				nPlmnIDByte, nCid, _, err := parse.GetNRMetricKey(v.RanTypeChoiceNr.NRCgi)
+				nPlmnID := decode.PlmnIDToUint32(nPlmnIDByte)
+				nIDObj := &topoapi.NeighborCellID{
+					CellGlobalID: &topoapi.CellGlobalID{
+						Value: fmt.Sprintf("%x", nCid),
+					},
+					PlmnID: fmt.Sprintf("%x", nPlmnID),
+				}
+				cellObject.NeighborCellIDs = append(cellObject.NeighborCellIDs, nIDObj)
+				if err != nil {
+					return err
+				}
+			case *e2smrc.NeighborCellItem_RanTypeChoiceEutra:
+				// 4G case
+				// ToDo: add EUTRA case
 			}
-			nPlmnID := decode.PlmnIDToUint32(nPlmnIDByte)
-
-			nIDObj := &topoapi.NeighborCellID{
-				CellGlobalID: &topoapi.CellGlobalID{
-					Value: fmt.Sprintf("%x", nCid),
-				},
-				PlmnID: fmt.Sprintf("%x", nPlmnID),
-			}
-			cellObject.NeighborCellIDs = append(cellObject.NeighborCellIDs, nIDObj)
 		}
 		cellObject.CellType = cellType
 		err = object.SetAspect(cellObject)
@@ -81,6 +88,15 @@ func (c *Client) UpdateCellAspects(ctx context.Context, cellID topoapi.ID, pci u
 			return err
 		}
 		return nil
+		cellObject.ARFCN = arfcn
+		err = object.SetAspect(cellObject)
+		if err != nil {
+			return err
+		}
+		err = c.client.Update(ctx, object)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

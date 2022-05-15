@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022-present Intel Corporation
 // SPDX-FileCopyrightText: 2020-present Open Networking Foundation <info@opennetworking.org>
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -140,7 +141,7 @@ func (m *Manager) getRanFunction(serviceModelsInfo map[string]*topoapi.ServiceMo
 
 func (m *Manager) createSubscription(ctx context.Context, e2nodeID topoapi.ID) error {
 	log.Info("Creating subscription for E2 node with ID:", e2nodeID)
-	eventTriggerData, err := subutils.CreateEventTriggerOnChange()
+	eventTriggerData, err := subutils.CreateEventTriggerDefinition()
 	if err != nil {
 		log.Warn(err)
 		return err
@@ -238,13 +239,13 @@ func (m *Manager) watchPCIChanges(ctx context.Context, e2nodeID topoapi.ID) {
 	for e := range ch {
 		if e.Type == metrics.UpdatedPCI && e2nodeID == e.Value.Value.E2NodeID {
 			key := e.Value.Key
-			header, err := control.CreateRcControlHeader(key.CellGlobalID, nil)
+			header, err := control.CreateRcControlHeader(key.CellGlobalID)
 			if err != nil {
 				log.Warn(err)
 			}
 			newPci := e.Value.Value.Metric.PCI
 			log.Debugf("send control message for key: %v / pci: %v", e.Key, newPci)
-			payload, err := control.CreateRcControlMessage(10, "pci", int64(newPci))
+			payload, err := control.CreateRcControlMessage(int64(newPci), key.CellGlobalID)
 			if err != nil {
 				log.Warn(err)
 			}

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022-present Intel Corporation
 // SPDX-FileCopyrightText: 2020-present Open Networking Foundation <info@opennetworking.org>
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -10,7 +11,7 @@ import (
 
 	"github.com/onosproject/onos-pci/pkg/utils/parse"
 
-	e2smrcpre "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/v2/e2sm-rc-pre-v2-go"
+	e2smrccomm "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc/v1/e2sm-common-ies"
 
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 
@@ -167,13 +168,17 @@ func (s *store) UpdatePci(ctx context.Context, key uint64, pci int32) error {
 }
 
 // NewKey creates a new measurements map key
-func NewKey(cellGlobalID *e2smrcpre.CellGlobalId) uint64 {
-	return nrcgiToInt(cellGlobalID.GetNrCgi())
+func NewKey(cellGlobalID *e2smrccomm.Cgi) uint64 {
+	if cellGlobalID.GetNRCgi() != nil {
+		return nrcgiToInt(cellGlobalID.GetNRCgi())
+	}
+	// ToDo: Add here ECGI for 4G case
+	return 0
 }
 
 // convert from NRCGI to uint64
-func nrcgiToInt(nrcgi *e2smrcpre.Nrcgi) uint64 {
-	array := nrcgi.PLmnIdentity.Value
+func nrcgiToInt(nrcgi *e2smrccomm.NrCgi) uint64 {
+	array := nrcgi.GetPLmnidentity().GetValue()
 	plmnid := uint32(array[0])<<0 | uint32(array[1])<<8 | uint32(array[2])<<16
 	nci := nrcgi.NRcellIdentity.Value.Value
 	return uint64(plmnid)<<36 | parse.BitStringToUint64(nci, int(nrcgi.NRcellIdentity.Value.Len))
