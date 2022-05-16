@@ -35,7 +35,7 @@ import (
 var log = logging.GetLogger()
 
 const (
-	oid = "1.3.6.1.4.1.53148.1.2.2.100"
+	oid = "1.3.6.1.4.1.53148.1.1.2.3"
 )
 
 // Node e2 manager interface
