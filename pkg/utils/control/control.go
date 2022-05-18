@@ -9,6 +9,7 @@ import (
 	"github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc/pdubuilder"
 	e2smrccomm "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc/v1/e2sm-common-ies"
 	e2smrc "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc/v1/e2sm-rc-ies"
+	"github.com/onosproject/onos-lib-go/api/asn1/v1/asn1"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"google.golang.org/protobuf/proto"
 )
@@ -33,7 +34,35 @@ func CreateRcControlHeader(cgi *e2smrccomm.Cgi) ([]byte, error) {
 		return nil, errors.NewInvalid("cgi is not set")
 	}
 
-	emptyUEID := &e2smrccomm.Ueid{}
+	emptyUEID := &e2smrccomm.Ueid{
+		Ueid: &e2smrccomm.Ueid_GNbUeid{
+			GNbUeid: &e2smrccomm.UeidGnb{
+				AmfUeNgapId: &e2smrccomm.AmfUeNgapId{Value: 0},
+				Guami: &e2smrccomm.Guami{
+					PLmnidentity: &e2smrccomm.Plmnidentity{Value: []byte{0, 0, 0}},
+					AMfregionId:  &e2smrccomm.AmfregionId{Value: &asn1.BitString{Value: []byte{0}, Len: 8}},
+					AMfsetId:     &e2smrccomm.AmfsetId{Value: &asn1.BitString{Value: []byte{0, 0}, Len: 10}},
+					AMfpointer:   &e2smrccomm.Amfpointer{Value: &asn1.BitString{Value: []byte{0}, Len: 6}},
+				},
+				GNbCuUeF1ApIdList:   &e2smrccomm.UeidGnbCuF1ApIdList{Value: []*e2smrccomm.UeidGnbCuCpF1ApIdItem{&e2smrccomm.UeidGnbCuCpF1ApIdItem{GNbCuUeF1ApId: &e2smrccomm.GnbCuUeF1ApId{Value: 0}}}},
+				GNbCuCpUeE1ApIdList: &e2smrccomm.UeidGnbCuCpE1ApIdList{Value: []*e2smrccomm.UeidGnbCuCpE1ApIdItem{&e2smrccomm.UeidGnbCuCpE1ApIdItem{GNbCuCpUeE1ApId: &e2smrccomm.GnbCuCpUeE1ApId{Value: 0}}}},
+				RanUeid:             &e2smrccomm.Ranueid{Value: []byte{0, 0, 0, 0, 0, 0, 0, 0}},
+				MNgRanUeXnApId:      &e2smrccomm.NgRannodeUexnApid{Value: 0},
+				GlobalGnbId: &e2smrccomm.GlobalGnbId{
+					PLmnidentity: &e2smrccomm.Plmnidentity{Value: []byte{0, 0, 0}},
+					GNbId:        &e2smrccomm.GnbId{GnbId: &e2smrccomm.GnbId_GNbId{GNbId: &asn1.BitString{Value: []byte{0, 0, 0, 0}, Len: 32}}},
+				},
+				GlobalNgRannodeId: &e2smrccomm.GlobalNgrannodeId{
+					GlobalNgrannodeId: &e2smrccomm.GlobalNgrannodeId_GNb{
+						GNb: &e2smrccomm.GlobalGnbId{
+							PLmnidentity: &e2smrccomm.Plmnidentity{Value: []byte{0, 0, 0}},
+							GNbId:        &e2smrccomm.GnbId{GnbId: &e2smrccomm.GnbId_GNbId{GNbId: &asn1.BitString{Value: []byte{0, 0, 0, 0}, Len: 32}}},
+						},
+					},
+				},
+			},
+		},
+	}
 	ctrlHdrFormat1, err := pdubuilder.CreateE2SmRcControlHeaderFormat1(emptyUEID, ricStyleType, controlActionID)
 	if err != nil {
 		return nil, err

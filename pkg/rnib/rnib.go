@@ -8,6 +8,7 @@ package rnib
 import (
 	"context"
 	"fmt"
+	"github.com/onosproject/onos-lib-go/pkg/logging"
 
 	topoapi "github.com/onosproject/onos-api/go/onos/topo"
 	e2smrc "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc/v1/e2sm-rc-ies"
@@ -15,6 +16,8 @@ import (
 	"github.com/onosproject/onos-pci/pkg/utils/parse"
 	toposdk "github.com/onosproject/onos-ric-sdk-go/pkg/topo"
 )
+
+var log = logging.GetLogger()
 
 // TopoClient R-NIB client interface
 type TopoClient interface {
@@ -84,10 +87,14 @@ func (c *Client) UpdateCellAspects(ctx context.Context, cellID topoapi.ID, pci u
 		if err != nil {
 			return err
 		}
+
+		log.Debugf("Storing/updating E2Cell Object to R-NIB: %v", object)
+
 		err = c.client.Update(ctx, object)
 		if err != nil {
 			return err
 		}
+
 	}
 	return nil
 }
