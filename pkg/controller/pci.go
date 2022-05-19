@@ -73,7 +73,7 @@ func (p *PciController) getAvailablePci(ctx context.Context, entry *metrics.Entr
 	}
 
 	// Make a PCI map to check which PCIs in the PciPool are occupied
-	err = p.neighborTraversal(ctx, entry.Key, entry, 1, pciMap)
+	err = p.neighborTraversal(ctx, entry, entry, 1, pciMap)
 	if err != nil {
 		return 0, false, err
 	}
@@ -107,47 +107,56 @@ func (p *PciController) getEmptyPciMap(pciPoolList []*types.PCIPool) (map[int32]
 	return pciMap, nil
 }
 
-func (p *PciController) neighborTraversal(ctx context.Context, rootKey metrics.Key, entry *metrics.Entry, cDepth int, pciMap map[int32]bool) error {
+func (p *PciController) neighborTraversal(ctx context.Context, root *metrics.Entry, entry *metrics.Entry, cDepth int, pciMap map[int32]bool) error {
 	var err error
 	if cDepth > SearchDepth {
 		// if this is the leaf entry, then return
 		return err
 	}
 
+	rootArfcn := root.Value.Metric.ARFCN
+
 	for _, n := range entry.Value.Neighbors {
 		neighborCGI := &e2smrccomm.Cgi{}
 		var pci int32
+		var arfcn int32
 		if n.GetRanTypeChoiceNr() != nil {
 			neighborCGI.Cgi = &e2smrccomm.Cgi_NRCgi{
 				NRCgi: n.GetRanTypeChoiceNr().GetNRCgi(),
 			}
 			pci = n.GetRanTypeChoiceNr().GetNRPci().GetValue()
+			arfcn = n.GetRanTypeChoiceNr().GetNRFreqInfo().GetNrArfcn().GetNRarfcn()
 		} else if n.GetRanTypeChoiceEutra() != nil {
 			neighborCGI.Cgi = &e2smrccomm.Cgi_EUtraCgi{
 				EUtraCgi: n.GetRanTypeChoiceEutra().GetEUtraCgi(),
 			}
 			pci = n.GetRanTypeChoiceEutra().GetEUtraPci().GetValue()
+			arfcn = n.GetRanTypeChoiceEutra().GetEUtraArfcn().GetValue()
 		} else {
 			log.Errorf("Neighbor type should be NR or EUTRAN: %v", n)
 			continue
 		}
 
 		// is CGI root key equal to neighbor CGI? - if so, skip; otherwise, mark pciMap as false
-		if !p.isCGIEqual(rootKey.CellGlobalID, neighborCGI) {
+		if !p.isCGIEqual(root.Key.CellGlobalID, neighborCGI) {
 			neighborEntry := p.getEntryWithNeighborCGI(ctx, neighborCGI)
 			if neighborEntry != nil {
 				// if neighbor metric is in store - search store first:
 				// neighbor metric has more recent PCI than the neighbors field in entry,
 				// because this controller updates PCI in neighbor metric after sending RC-PRE control message
-				pciMap[neighborEntry.Value.Metric.PCI] = true
-				err = p.neighborTraversal(ctx, rootKey, neighborEntry, cDepth+1, pciMap)
+				if rootArfcn == arfcn {
+					pciMap[neighborEntry.Value.Metric.PCI] = true
+				}
+				err = p.neighborTraversal(ctx, root, neighborEntry, cDepth+1, pciMap)
 				if err != nil {
 					log.Error(err)
 				}
 			} else {
 				// if neighbor metric is not in store, but in the entry neighbors field
 				// hit here in the case when ind message was not arrived yet or the neighbor is not connected to the E2Nodes subscribing with this app
-				pciMap[pci] = true
+				if rootArfcn == arfcn {
+					pciMap[pci] = true
+				}
 			}
 		}
 	}

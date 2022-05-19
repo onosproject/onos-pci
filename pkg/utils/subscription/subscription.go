@@ -9,6 +9,7 @@ import (
 	e2api "github.com/onosproject/onos-api/go/onos/e2t/e2/v1beta1"
 	"github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc/pdubuilder"
 	e2smrc "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc/v1/e2sm-rc-ies"
+	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -16,6 +17,8 @@ const (
 	e2nodeInformationChangeID1CellConfigChange      = 1
 	e2nodeInformationChangeID2CellNeighborRelChange = 2
 )
+
+var log = logging.GetLogger()
 
 // CreateEventTriggerDefinition creates RC event trigger data
 func CreateEventTriggerDefinition() ([]byte, error) {
@@ -55,9 +58,26 @@ func CreateEventTriggerDefinition() ([]byte, error) {
 // CreateSubscriptionActions creates subscription actions for report
 func CreateSubscriptionActions() []e2api.Action {
 	actions := make([]e2api.Action, 0)
+
+	ad, err := pdubuilder.CreateE2SmRcActionDefinitionFormat1(3, []int64{21528})
+	if err != nil {
+		log.Error(err)
+	}
+
+	err = ad.Validate()
+	if err != nil {
+		log.Error(err)
+	}
+
+	adProto, err := proto.Marshal(ad)
+	if err != nil {
+		log.Error(err)
+	}
+
 	action := &e2api.Action{
-		ID:   int32(3),
-		Type: e2api.ActionType_ACTION_TYPE_REPORT,
+		ID:      int32(3),
+		Type:    e2api.ActionType_ACTION_TYPE_REPORT,
+		Payload: adProto,
 	}
 	actions = append(actions, *action)
 	return actions
