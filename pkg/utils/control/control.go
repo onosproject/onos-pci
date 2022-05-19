@@ -44,8 +44,8 @@ func CreateRcControlHeader(cgi *e2smrccomm.Cgi) ([]byte, error) {
 					AMfsetId:     &e2smrccomm.AmfsetId{Value: &asn1.BitString{Value: []byte{0, 0}, Len: 10}},
 					AMfpointer:   &e2smrccomm.Amfpointer{Value: &asn1.BitString{Value: []byte{0}, Len: 6}},
 				},
-				GNbCuUeF1ApIdList:   &e2smrccomm.UeidGnbCuF1ApIdList{Value: []*e2smrccomm.UeidGnbCuCpF1ApIdItem{&e2smrccomm.UeidGnbCuCpF1ApIdItem{GNbCuUeF1ApId: &e2smrccomm.GnbCuUeF1ApId{Value: 0}}}},
-				GNbCuCpUeE1ApIdList: &e2smrccomm.UeidGnbCuCpE1ApIdList{Value: []*e2smrccomm.UeidGnbCuCpE1ApIdItem{&e2smrccomm.UeidGnbCuCpE1ApIdItem{GNbCuCpUeE1ApId: &e2smrccomm.GnbCuCpUeE1ApId{Value: 0}}}},
+				GNbCuUeF1ApIdList:   &e2smrccomm.UeidGnbCuF1ApIdList{Value: []*e2smrccomm.UeidGnbCuCpF1ApIdItem{{GNbCuUeF1ApId: &e2smrccomm.GnbCuUeF1ApId{Value: 0}}}},
+				GNbCuCpUeE1ApIdList: &e2smrccomm.UeidGnbCuCpE1ApIdList{Value: []*e2smrccomm.UeidGnbCuCpE1ApIdItem{{GNbCuCpUeE1ApId: &e2smrccomm.GnbCuCpUeE1ApId{Value: 0}}}},
 				RanUeid:             &e2smrccomm.Ranueid{Value: []byte{0, 0, 0, 0, 0, 0, 0, 0}},
 				MNgRanUeXnApId:      &e2smrccomm.NgRannodeUexnApid{Value: 0},
 				GlobalGnbId: &e2smrccomm.GlobalGnbId{
