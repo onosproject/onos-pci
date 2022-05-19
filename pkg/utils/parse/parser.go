@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022-present Intel Corporation
 // SPDX-FileCopyrightText: 2020-present Open Networking Foundation <info@opennetworking.org>
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -5,7 +6,7 @@
 package parse
 
 import (
-	e2smrcprev2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/v2/e2sm-rc-pre-v2-go"
+	e2smrccomm "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc/v1/e2sm-common-ies"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 )
 
@@ -21,29 +22,32 @@ func (c CGIType) String() string {
 	return [...]string{"CGITypeNRCGI", "CGITypeECGI", "CGITypeUnknown"}[c]
 }
 
-func GetMetricKey(e *e2smrcprev2.CellGlobalId) ([]byte, uint64, CGIType, error) {
+func GetNRMetricKey(e *e2smrccomm.NrCgi) ([]byte, uint64, CGIType, error) {
 	if e == nil {
 		return nil, 0, CGITypeUnknown, errors.NewNotFound("CellGlobalID is not found in entry Key field")
-	} else if e.GetNrCgi() != nil {
-		return e.GetNrCgi().GetPLmnIdentity().GetValue(),
-			BitStringToUint64(e.GetNrCgi().GetNRcellIdentity().GetValue().Value, int(e.GetNrCgi().GetNRcellIdentity().GetValue().Len)),
-			CGITypeNrCGI,
-			nil
-	} else if e.GetEUtraCgi() != nil {
-		return e.GetEUtraCgi().GetPLmnIdentity().GetValue(),
-			BitStringToUint64(e.GetEUtraCgi().GetEUtracellIdentity().GetValue().Value, int(e.GetEUtraCgi().GetEUtracellIdentity().GetValue().Len)),
-			CGITypeECGI,
-			nil
 	}
-	return nil, 0, CGITypeUnknown, errors.NewNotSupported("CGI should be one of NrCGI and ECGI")
+	return e.GetPLmnidentity().GetValue(),
+		BitStringToUint64(e.GetNRcellIdentity().GetValue().GetValue(), int(e.GetNRcellIdentity().GetValue().GetLen())),
+		CGITypeNrCGI,
+		nil
 }
 
-func GetCellID(cellGlobalID *e2smrcprev2.CellGlobalId) (uint64, error) {
-	switch v := cellGlobalID.GetCellGlobalId().(type) {
-	case *e2smrcprev2.CellGlobalId_EUtraCgi:
-		return BitStringToUint64(v.EUtraCgi.EUtracellIdentity.Value.Value, int(v.EUtraCgi.EUtracellIdentity.Value.Len)), nil
-	case *e2smrcprev2.CellGlobalId_NrCgi:
-		return BitStringToUint64(v.NrCgi.NRcellIdentity.Value.Value, int(v.NrCgi.NRcellIdentity.Value.Len)), nil
+func GetEUTRAMetricKey(e *e2smrccomm.EutraCgi) ([]byte, uint64, CGIType, error) {
+	if e == nil {
+		return nil, 0, CGITypeUnknown, errors.NewNotFound("CellGlobalID is not found in entry Key field")
+	}
+	return e.GetPLmnidentity().GetValue(),
+		BitStringToUint64(e.GetEUtracellIdentity().GetValue().GetValue(), int(e.GetEUtracellIdentity().GetValue().GetLen())),
+		CGITypeECGI,
+		nil
+}
+
+func GetCellID(cellGlobalID *e2smrccomm.Cgi) (uint64, error) {
+	switch v := cellGlobalID.Cgi.(type) {
+	case *e2smrccomm.Cgi_EUtraCgi:
+		return BitStringToUint64(v.EUtraCgi.GetEUtracellIdentity().GetValue().GetValue(), int(v.EUtraCgi.GetEUtracellIdentity().GetValue().GetLen())), nil
+	case *e2smrccomm.Cgi_NRCgi:
+		return BitStringToUint64(v.NRCgi.GetNRcellIdentity().GetValue().GetValue(), int(v.NRCgi.GetNRcellIdentity().GetValue().GetLen())), nil
 	}
 	return 0, errors.New(errors.NotSupported, "CGI should be one of NrCGI and ECGI")
 }

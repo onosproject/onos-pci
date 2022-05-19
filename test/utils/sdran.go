@@ -6,7 +6,6 @@ package utils
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/onosproject/helmit/pkg/input"
@@ -103,7 +102,7 @@ func WaitForNoConflicts(t *testing.T, mgr *manager.Manager) error {
 	// After each event, check for number of remaining conflicts
 	for e := range ch {
 		pciEntry := e.Value.Value
-		t.Log(fmt.Sprintf("Call %v has PCI %d", e.Key, pciEntry.Metric.PCI))
+		t.Logf("Call %v has PCI %d", e.Key, pciEntry.Metric.PCI)
 
 		resp, err := server.GetConflicts(context.Background(), &pci.GetConflictsRequest{})
 		assert.NoError(t, err)
@@ -111,7 +110,7 @@ func WaitForNoConflicts(t *testing.T, mgr *manager.Manager) error {
 			t.Log("All PCI conflicts eliminated")
 			break
 		}
-		t.Log(fmt.Sprintf("Remaining PCI conflicts: %v", resp.Cells))
+		t.Logf("Remaining PCI conflicts: %v", resp.Cells)
 	}
 	return err
 }

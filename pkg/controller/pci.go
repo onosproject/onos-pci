@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2022-present Intel Corporation
 // SPDX-FileCopyrightText: 2020-present Open Networking Foundation <info@opennetworking.org>
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -7,7 +8,7 @@ package controller
 import (
 	"context"
 
-	e2smrcprev2 "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc_pre_go/v2/e2sm-rc-pre-v2-go"
+	e2smrccomm "github.com/onosproject/onos-e2-sm/servicemodels/e2sm_rc/v1/e2sm-common-ies"
 	"github.com/onosproject/onos-lib-go/pkg/errors"
 	"github.com/onosproject/onos-lib-go/pkg/logging"
 	"github.com/onosproject/onos-pci/pkg/store/metrics"
@@ -72,7 +73,7 @@ func (p *PciController) getAvailablePci(ctx context.Context, entry *metrics.Entr
 	}
 
 	// Make a PCI map to check which PCIs in the PciPool are occupied
-	err = p.neighborTraversal(ctx, entry.Key, entry, 1, pciMap)
+	err = p.neighborTraversal(ctx, entry, entry, 1, pciMap)
 	if err != nil {
 		return 0, false, err
 	}
@@ -106,30 +107,56 @@ func (p *PciController) getEmptyPciMap(pciPoolList []*types.PCIPool) (map[int32]
 	return pciMap, nil
 }
 
-func (p *PciController) neighborTraversal(ctx context.Context, rootKey metrics.Key, entry *metrics.Entry, cDepth int, pciMap map[int32]bool) error {
+func (p *PciController) neighborTraversal(ctx context.Context, root *metrics.Entry, entry *metrics.Entry, cDepth int, pciMap map[int32]bool) error {
 	var err error
 	if cDepth > SearchDepth {
 		// if this is the leaf entry, then return
 		return err
 	}
 
+	rootArfcn := root.Value.Metric.ARFCN
+
 	for _, n := range entry.Value.Neighbors {
+		neighborCGI := &e2smrccomm.Cgi{}
+		var pci int32
+		var arfcn int32
+		if n.GetRanTypeChoiceNr() != nil {
+			neighborCGI.Cgi = &e2smrccomm.Cgi_NRCgi{
+				NRCgi: n.GetRanTypeChoiceNr().GetNRCgi(),
+			}
+			pci = n.GetRanTypeChoiceNr().GetNRPci().GetValue()
+			arfcn = n.GetRanTypeChoiceNr().GetNRFreqInfo().GetNrArfcn().GetNRarfcn()
+		} else if n.GetRanTypeChoiceEutra() != nil {
+			neighborCGI.Cgi = &e2smrccomm.Cgi_EUtraCgi{
+				EUtraCgi: n.GetRanTypeChoiceEutra().GetEUtraCgi(),
+			}
+			pci = n.GetRanTypeChoiceEutra().GetEUtraPci().GetValue()
+			arfcn = n.GetRanTypeChoiceEutra().GetEUtraArfcn().GetValue()
+		} else {
+			log.Errorf("Neighbor type should be NR or EUTRAN: %v", n)
+			continue
+		}
+
 		// is CGI root key equal to neighbor CGI? - if so, skip; otherwise, mark pciMap as false
-		if !p.isCGIEqual(rootKey.CellGlobalID, n.GetCgi()) {
-			neighborEntry := p.getEntryWithNeighborCGI(ctx, n.GetCgi())
+		if !p.isCGIEqual(root.Key.CellGlobalID, neighborCGI) {
+			neighborEntry := p.getEntryWithNeighborCGI(ctx, neighborCGI)
 			if neighborEntry != nil {
 				// if neighbor metric is in store - search store first:
 				// neighbor metric has more recent PCI than the neighbors field in entry,
 				// because this controller updates PCI in neighbor metric after sending RC-PRE control message
-				pciMap[neighborEntry.Value.Metric.PCI] = true
-				err = p.neighborTraversal(ctx, rootKey, neighborEntry, cDepth+1, pciMap)
+				if rootArfcn == arfcn {
+					pciMap[neighborEntry.Value.Metric.PCI] = true
+				}
+				err = p.neighborTraversal(ctx, root, neighborEntry, cDepth+1, pciMap)
 				if err != nil {
 					log.Error(err)
 				}
 			} else {
 				// if neighbor metric is not in store, but in the entry neighbors field
 				// hit here in the case when ind message was not arrived yet or the neighbor is not connected to the E2Nodes subscribing with this app
-				pciMap[n.Pci.Value] = true
+				if rootArfcn == arfcn {
+					pciMap[pci] = true
+				}
 			}
 		}
 	}
@@ -140,7 +167,7 @@ func (p *PciController) neighborTraversal(ctx context.Context, rootKey metrics.K
 // getEntryWithNeighborCGI gets entry in store with CGI value, not entry key (not pointer)
 // used when searching neighbor entry in store
 // since entry key is the pointer of CGI, it is impossible to get entry with CGI in neighbor field
-func (p *PciController) getEntryWithNeighborCGI(ctx context.Context, id *e2smrcprev2.CellGlobalId) *metrics.Entry {
+func (p *PciController) getEntryWithNeighborCGI(ctx context.Context, id *e2smrccomm.Cgi) *metrics.Entry {
 	ch := make(chan *metrics.Entry)
 	var targetEntry *metrics.Entry
 	go func(chan *metrics.Entry) {
@@ -158,21 +185,39 @@ func (p *PciController) getEntryWithNeighborCGI(ctx context.Context, id *e2smrcp
 }
 
 // isCGIEqual compares CGI values, not pointers
-func (p *PciController) isCGIEqual(s *e2smrcprev2.CellGlobalId, t *e2smrcprev2.CellGlobalId) bool {
-	sPlmnID, sCellID, sCGIType, err := parse.GetMetricKey(s)
-	if err != nil {
-		log.Errorf("could not parse source CGI: %v", err)
-		return false
-	}
-	tPlmnID, tCellID, tCGIType, err := parse.GetMetricKey(t)
-	if err != nil {
-		log.Errorf("could not parse target CGI: %v", err)
-		return false
+func (p *PciController) isCGIEqual(s *e2smrccomm.Cgi, t *e2smrccomm.Cgi) bool {
+	// both s and t should be either 4G or 5G
+	if s.GetNRCgi() != nil && t.GetNRCgi() != nil {
+		sPlmnID, sCellID, sCGIType, err := parse.GetNRMetricKey(s.GetNRCgi())
+		if err != nil {
+			log.Errorf("could not parse source CGI: %v", err)
+			return false
+		}
+		tPlmnID, tCellID, tCGIType, err := parse.GetNRMetricKey(t.GetNRCgi())
+		if err != nil {
+			log.Errorf("could not parse target CGI: %v", err)
+			return false
+		}
+		if decode.PlmnIDToUint32(sPlmnID) == decode.PlmnIDToUint32(tPlmnID) &&
+			sCellID == tCellID && sCGIType == tCGIType {
+			return true
+		}
+	} else if s.GetEUtraCgi() != nil && t.GetEUtraCgi() != nil {
+		sPlmnID, sCellID, sCGIType, err := parse.GetEUTRAMetricKey(s.GetEUtraCgi())
+		if err != nil {
+			log.Errorf("could not parse source CGI: %v", err)
+			return false
+		}
+		tPlmnID, tCellID, tCGIType, err := parse.GetEUTRAMetricKey(t.GetEUtraCgi())
+		if err != nil {
+			log.Errorf("could not parse target CGI: %v", err)
+			return false
+		}
+		if decode.PlmnIDToUint32(sPlmnID) == decode.PlmnIDToUint32(tPlmnID) &&
+			sCellID == tCellID && sCGIType == tCGIType {
+			return true
+		}
 	}
 
-	if decode.PlmnIDToUint32(sPlmnID) == decode.PlmnIDToUint32(tPlmnID) &&
-		sCellID == tCellID && sCGIType == tCGIType {
-		return true
-	}
 	return false
 }
