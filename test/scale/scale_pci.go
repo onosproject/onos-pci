@@ -20,8 +20,8 @@ func (s *TestSuite) TestScalePci(t *testing.T) {
 		ConfigPath:  "/tmp/config.json",
 		E2tEndpoint: "onos-e2t:5150",
 		GRPCPort:    5150,
-		SMName:      "oran-e2sm-rc-pre",
-		SMVersion:   "v2",
+		SMName:      "oran-e2sm-rc",
+		SMVersion:   "v1",
 	}
 
 	_, err := certs.HandleCertPaths(cfg.CAPath, cfg.KeyPath, cfg.CertPath, true)
