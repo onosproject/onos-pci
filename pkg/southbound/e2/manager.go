@@ -214,8 +214,7 @@ func (m *Manager) watchE2Connections(ctx context.Context) error {
 	for topoEvent := range ch {
 		if topoEvent.Type == topoapi.EventType_ADDED || topoEvent.Type == topoapi.EventType_NONE {
 			log.Infof("New E2 connection detected")
-			relation := topoEvent.Object.Obj.(*topoapi.Object_Relation)
-			e2NodeID := relation.Relation.TgtEntityID
+			e2NodeID := topoEvent.Object.ID
 			go func() {
 				err := m.newSubscription(ctx, e2NodeID)
 				if err != nil {
