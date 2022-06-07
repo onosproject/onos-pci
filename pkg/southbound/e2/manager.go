@@ -216,7 +216,14 @@ func (m *Manager) watchE2Connections(ctx context.Context) error {
 			log.Infof("New E2 connection detected")
 			relation := topoEvent.Object.Obj.(*topoapi.Object_Relation)
 			e2NodeID := relation.Relation.TgtEntityID
+
+			if !m.rnibClient.HasRCRANFunction(ctx, e2NodeID, oid) {
+				log.Debugf("Received topo event does not have RC RAN function - %v", topoEvent)
+				continue
+			}
+
 			go func() {
+				log.Debugf("start creating subscriptions %v", topoEvent)
 				err := m.newSubscription(ctx, e2NodeID)
 				if err != nil {
 					log.Warn(err)
