@@ -24,7 +24,8 @@ type TopoClient interface {
 	WatchE2Connections(ctx context.Context, ch chan topoapi.Event) error
 	GetE2NodeAspects(ctx context.Context, nodeID topoapi.ID) (*topoapi.E2Node, error)
 	GetCells(ctx context.Context, nodeID topoapi.ID) ([]*topoapi.E2Cell, error)
-	E2NodeIDs(ctx context.Context) ([]topoapi.ID, error)
+	E2NodeIDs(ctx context.Context, oid string) ([]topoapi.ID, error)
+	HasRCRANFunction(ctx context.Context, nodeID topoapi.ID, oid string) bool
 }
 
 // NewClient creates a new topo SDK client
@@ -44,6 +45,21 @@ func NewClient() (Client, error) {
 // Client topo SDK client
 type Client struct {
 	client toposdk.Client
+}
+
+func (c *Client) HasRCRANFunction(ctx context.Context, nodeID topoapi.ID, oid string) bool {
+	e2Node, err := c.GetE2NodeAspects(ctx, nodeID)
+	if err != nil {
+		log.Warn(err)
+		return false
+	}
+
+	for _, sm := range e2Node.GetServiceModels() {
+		if sm.OID == oid {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Client) UpdateCellAspects(ctx context.Context, cellID topoapi.ID, pci uint32, neighborIDs []*e2smrc.NeighborCellItem, arfcn uint32) error {
@@ -126,16 +142,19 @@ func (c *Client) GetCells(ctx context.Context, nodeID topoapi.ID) ([]*topoapi.E2
 }
 
 // E2NodeIDs lists all of connected E2 nodes
-func (c *Client) E2NodeIDs(ctx context.Context) ([]topoapi.ID, error) {
-	objects, err := c.client.List(ctx, toposdk.WithListFilters(getE2NodeFilter()))
+func (c *Client) E2NodeIDs(ctx context.Context, oid string) ([]topoapi.ID, error) {
+	objects, err := c.client.List(ctx, toposdk.WithListFilters(getControlRelationFilter()))
 	if err != nil {
 		return nil, err
 	}
 
 	e2NodeIDs := make([]topoapi.ID, len(objects))
 	for _, object := range objects {
-		e2NodeID := object.ID
-		e2NodeIDs = append(e2NodeIDs, e2NodeID)
+		relation := object.Obj.(*topoapi.Object_Relation)
+		e2NodeID := relation.Relation.TgtEntityID
+		if c.HasRCRANFunction(ctx, e2NodeID, oid) {
+			e2NodeIDs = append(e2NodeIDs, e2NodeID)
+		}
 	}
 
 	return e2NodeIDs, nil
@@ -153,22 +172,22 @@ func (c *Client) GetE2NodeAspects(ctx context.Context, nodeID topoapi.ID) (*topo
 
 }
 
-func getE2NodeFilter() *topoapi.Filters {
-	e2NodeFilter := &topoapi.Filters{
+func getControlRelationFilter() *topoapi.Filters {
+	filter := &topoapi.Filters{
 		KindFilter: &topoapi.Filter{
 			Filter: &topoapi.Filter_Equal_{
 				Equal_: &topoapi.EqualFilter{
-					Value: topoapi.E2NODE,
+					Value: topoapi.CONTROLS,
 				},
 			},
 		},
 	}
-	return e2NodeFilter
+	return filter
 }
 
 // WatchE2Connections watch e2 node connection changes
 func (c *Client) WatchE2Connections(ctx context.Context, ch chan topoapi.Event) error {
-	err := c.client.Watch(ctx, ch, toposdk.WithWatchFilters(getE2NodeFilter()))
+	err := c.client.Watch(ctx, ch, toposdk.WithWatchFilters(getControlRelationFilter()))
 	if err != nil {
 		return err
 	}
