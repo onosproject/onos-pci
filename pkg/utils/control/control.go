@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	ricStyleType             = 9
+	ricStyleType             = 200
 	controlActionID          = 1
 	ranParamIDForPCI         = 1
 	ranParamIDForNrPCI       = 11
