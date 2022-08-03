@@ -261,7 +261,7 @@ func (m *Manager) watchPCIChanges(ctx context.Context, e2nodeID topoapi.ID) {
 			outcome, err := node.Control(ctx, &e2api.ControlMessage{
 				Header:  header,
 				Payload: payload,
-			})
+			}, nil)
 			if err != nil {
 				log.Warn(err)
 			}
