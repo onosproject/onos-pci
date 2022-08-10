@@ -140,7 +140,7 @@ func (m *Manager) getRanFunction(serviceModelsInfo map[string]*topoapi.ServiceMo
 }
 
 func (m *Manager) createSubscription(ctx context.Context, e2nodeID topoapi.ID) error {
-	log.Info("Creating subscription for E2 node with ID:", e2nodeID)
+	log.Infof("Creating subscription for E2 node with ID: ", e2nodeID)
 	eventTriggerData, err := subutils.CreateEventTriggerDefinition()
 	if err != nil {
 		log.Warn(err)
@@ -261,7 +261,7 @@ func (m *Manager) watchPCIChanges(ctx context.Context, e2nodeID topoapi.ID) {
 			outcome, err := node.Control(ctx, &e2api.ControlMessage{
 				Header:  header,
 				Payload: payload,
-			})
+			}, nil)
 			if err != nil {
 				log.Warn(err)
 			}
