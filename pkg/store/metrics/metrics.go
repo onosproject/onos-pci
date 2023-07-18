@@ -60,7 +60,7 @@ func NewStore() Store {
 	}
 }
 
-func (s *store) Entries(ctx context.Context, ch chan *Entry) error {
+func (s *store) Entries(_ context.Context, ch chan *Entry) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	defer close(ch)
@@ -75,7 +75,7 @@ func (s *store) Entries(ctx context.Context, ch chan *Entry) error {
 	return nil
 }
 
-func (s *store) Delete(ctx context.Context, key uint64) error {
+func (s *store) Delete(_ context.Context, key uint64) error {
 	// TODO check the key and make sure it is not empty
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -84,7 +84,7 @@ func (s *store) Delete(ctx context.Context, key uint64) error {
 
 }
 
-func (s *store) Put(ctx context.Context, key uint64, entry Entry) (*Entry, error) {
+func (s *store) Put(_ context.Context, key uint64, entry Entry) (*Entry, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -105,7 +105,7 @@ func (s *store) Put(ctx context.Context, key uint64, entry Entry) (*Entry, error
 
 }
 
-func (s *store) Get(ctx context.Context, key uint64) (*Entry, error) {
+func (s *store) Get(_ context.Context, key uint64) (*Entry, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if v, ok := s.metrics[key]; ok {
@@ -133,7 +133,7 @@ func (s *store) Watch(ctx context.Context, ch chan Event) error {
 	return nil
 }
 
-func (s *store) Update(ctx context.Context, key uint64, entry *Entry) error {
+func (s *store) Update(_ context.Context, key uint64, entry *Entry) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.metrics[key]; ok {
@@ -149,7 +149,7 @@ func (s *store) Update(ctx context.Context, key uint64, entry *Entry) error {
 	return errors.New(errors.NotFound, "the entry does not exist")
 }
 
-func (s *store) UpdatePci(ctx context.Context, key uint64, pci int32) error {
+func (s *store) UpdatePci(_ context.Context, key uint64, pci int32) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.metrics[key]; ok {

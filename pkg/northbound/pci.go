@@ -107,7 +107,7 @@ func (s *Server) GetConflicts(ctx context.Context, request *pciapi.GetConflictsR
 	return &pciapi.GetConflictsResponse{Cells: conflicts}, nil
 }
 
-func (s *Server) GetResolvedConflicts(ctx context.Context, request *pciapi.GetResolvedConflictsRequest) (*pciapi.GetResolvedConflictsResponse, error) {
+func (s *Server) GetResolvedConflicts(ctx context.Context, _ *pciapi.GetResolvedConflictsRequest) (*pciapi.GetResolvedConflictsResponse, error) {
 	conflicts := make([]*pciapi.CellResolution, 0)
 
 	ch := make(chan *metrics.Entry, 1024)
