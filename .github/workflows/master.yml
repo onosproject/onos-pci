@@ -20,7 +20,7 @@ jobs:
       - name: Build
         run: |
           GOPRIVATE="github.com/onosproject/*" go build -o build/_output/onos-pci ./cmd/onos-pci
-  
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -44,7 +44,7 @@ jobs:
         run: |
           go test -race github.com/onosproject/onos-pci/pkg/...
           go test -race github.com/onosproject/onos-pci/cmd/...
- 
+
   docker-build:
     runs-on: ubuntu-latest
     steps:
