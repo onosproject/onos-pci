@@ -78,6 +78,7 @@ case $INPUT in
 
   *)
     echo -n "unknown input"
+    exit 2
     ;;
 
 esac
