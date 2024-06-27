@@ -32,8 +32,7 @@ jobs:
         id: version-check-step
         run: |
           make check-version; if [[ $? == 0 ]]; then echo "valid_version=true" >> $GITHUB_OUTPUT; else echo "valid_version=false" >> $GITHUB_OUTPUT; fi
-          ./build/bin/version_check.sh is_dev; if [[ $? == 0 ]]; then echo "dev_version=true" >> $GITHUB_OUTPUT; else echo "dev_version=false" >> $GITHUB_OUTPUT; fi
-          echo "target_version=$(cat VERSION)" >> $GITHUB_OUTPUT
+
 
   tag_versions:
     runs-on: ubuntu-latest
