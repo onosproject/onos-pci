@@ -20,7 +20,7 @@ function is_valid_format() {
 function is_dev_version() {
     # check if version has '-dev'
     # if there is, no need to check version
-    if [[ ! $(cat VERSION | tr -d '\n' | tail -c 4) =~ "-dev" ]]
+    if [[ $(cat VERSION | tr -d '\n' | tail -c 4) =~ "-dev" ]]
     then
       return 0
     fi
@@ -51,7 +51,7 @@ case $INPUT in
 
     is_dev_version
     f_dev=$?
-    if [[ $f_dev == 1 ]]
+    if [[ $f_dev == 0 ]]
     then
         echo "This is dev version"
         exit 0
@@ -72,6 +72,13 @@ case $INPUT in
 
   is_dev)
     is_dev_version
+    f_dev=$?
+    if [[ $f_dev == 0 ]]
+    then
+        echo "true"
+        exit 0
+    fi
+    echo "false"
     ;;
 
   is_unique)
