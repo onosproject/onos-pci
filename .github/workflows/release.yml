@@ -4,11 +4,6 @@
 name: Publish image and tag/release code
 
 on:
-  pull_request:
-    branches:
-      - master
-    tags:
-      - '*'
   push:
     branches:
       - master
