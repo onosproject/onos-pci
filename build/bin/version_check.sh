@@ -1,6 +1,8 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2024 Intel Corporation
+
+set +x
 
 # input should be all, is_valid_format, is_dev, and is_unique
 INPUT=$1
