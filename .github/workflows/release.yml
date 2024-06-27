@@ -4,12 +4,12 @@
 name: Publish image and tag/release code
 
 on:
-  push:
+  pull_request:
     branches:
       - master
     tags:
       - '*'
-  pull_request:
+  push:
     branches:
       - master
     tags:
@@ -25,6 +25,8 @@ jobs:
       target_version: ${{ steps.version-check.outputs.target_version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: check version
         id: version-check
         run: |
