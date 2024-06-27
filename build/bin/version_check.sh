@@ -1,6 +1,8 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2024 Intel Corporation
+
+set +x
 
 # input should be all, is_valid_format, is_dev, and is_unique
 INPUT=$1
@@ -70,6 +72,13 @@ case $INPUT in
 
   is_dev)
     is_dev_version
+    f_dev=$?
+    if [[ $f_dev == 0 ]]
+    then
+        echo "true"
+        exit 0
+    fi
+    echo "false"
     ;;
 
   is_unique)
@@ -78,6 +87,7 @@ case $INPUT in
 
   *)
     echo -n "unknown input"
+    exit 2
     ;;
 
 esac
