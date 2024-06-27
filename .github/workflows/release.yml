@@ -37,6 +37,7 @@ jobs:
         id: dev-version-check-step
         shell: bash
         run: |
+          ls ./build/bin
           ./build/bin/version_check.sh is_dev
           if [[ $? == 0 ]]; then echo "dev_version=true" >> $GITHUB_OUTPUT; else echo "dev_version=false" >> $GITHUB_OUTPUT; fi
 
