@@ -17,6 +17,7 @@ on:
 
 jobs:
   version-check:
+    if: (github.repository_owner == 'onosproject')
     runs-on: ubuntu-latest
     outputs:
       valid_version: ${{ steps.version-check.outputs.valid_version }}
