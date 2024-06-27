@@ -38,6 +38,7 @@ jobs:
         run: |
           ./build/bin/version_check.sh is_dev || true
           if [[ $? == 0 ]]; then echo "dev_version=true" >> $GITHUB_OUTPUT; else echo "dev_version=false" >> $GITHUB_OUTPUT; fi
+          cat $GITHUB_OUTPUT
 
       - name: get target version
         id: get-target-version-step
