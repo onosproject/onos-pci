@@ -7,7 +7,7 @@ export GO111MODULE=on
 
 .PHONY: build
 
-ONOS_PCI_VERSION := latest
+ONOS_PCI_VERSION ?= latest
 ONOS_PROTOC_VERSION := v0.6.6
 BUF_VERSION := 0.27.1
 
@@ -32,6 +32,12 @@ docker-build-onos-pci: # @HELP build onos-pci Docker image
 docker-build: # @HELP build all Docker images
 docker-build: build docker-build-onos-pci
 
+docker-push-onos-pci: # @HELP push onos-pci Docker image
+	docker push onosproject/onos-pci:${ONOS_PCI_VERSION}
+
+docker-push: # @HELP push docker images
+docker-push: docker-push-onos-pci
+
 lint: # @HELP examines Go source code and reports coding problems
 	golangci-lint --version | grep $(GOLANG_CI_VERSION) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b `go env GOPATH`/bin $(GOLANG_CI_VERSION)
 	golangci-lint run --timeout 15m
@@ -45,7 +51,7 @@ license: # @HELP run license checks
 	reuse lint
 
 check-version: # @HELP check version is duplicated
-	./build/bin/version_check.sh
+	./build/bin/version_check.sh all
 
 clean: # @HELP remove all the build artifacts
 	rm -rf ./build/_output ./vendor ./cmd/onos-pci/onos-pci ./cmd/onos/onos venv
